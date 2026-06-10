@@ -1,0 +1,44 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Pakete laden
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+\usepackage{ifluatex}
+\usepackage{babel}
+%
+\ifluatex
+ % LuaLaTeX
+ \usepackage{fontspec}
+ \usepackage{selnolig}
+\else
+ % PdfLaTeX
+ \usepackage[T1]{fontenc}
+\fi
+%
+\usepackage{csquotes}
+\usepackage{scrlayer-scrpage}
+\usepackage{microtype}
+%
+%\usepackage{ziffer}% optional
+%\usepackage[locale=DE]{siunitx}% optional
+%
+\usepackage{tikz}
+\usepackage{pgfplots}
+%
+\usepackage[backend=biber]{biblatex}
+%
+\usepackage{amsmath}
+\usepackage{amssymb}
+%
+\usepackage{hyperref}
+%
+%=== wichtig, dass folgende Pakete NACH hyperref geladen werden ===============
+\usepackage{scrhack}% Um Warnung bzgl. \float@addtolists im listings-Paket (s.u.) zu vermeiden
+\usepackage{listings}
+%
+\usepackage[nameinlink]{cleveref}
+\usepackage[all]{hypcap}
+\usepackage[
+	toc,
+	symbols,
+	acronyms,
+]{glossaries}
