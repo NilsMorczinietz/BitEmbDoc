@@ -1,0 +1,41 @@
+\chapter{Grundlagen}
+%
+\section{Embeddings und vektorbasierte Suche}
+%
+Embeddings dienen dazu, semantische Information in einen numerischen Vektorraum zu überführen.
+Ob zwei Objekte ähnlich sind, wird dann nicht mehr über exakte Zeichenfolgen oder Regeln, sondern über die geometrische Nähe ihrer Vektoren bestimmt.
+In der Praxis werden dafür meist Float-Vektoren verwendet, etwa in 384, 768 oder 1536 Dimensionen.
+Solche Repräsentationen sind flexibel und präzise, verursachen aber bei großen Korpora hohe Speicher- und Suchkosten.
+Ein Korpus von 10 Millionen Dokumenten benötigt als Float32-Vektoren rund 31 GB RAM, während dieselben Daten mit TurboQuant auf etwa 4 GB reduziert werden können \cite{turbovec_2024}.
+%
+\section{Binäre Embeddings und Hamming-Distanz}
+%
+Eine alternative Repräsentation sind binäre Embeddings, bei denen jede Dimension auf ein Bit reduziert wird.
+Solche Repräsentationen sind stark speichereffizient und können mit Hamming-Distanz verglichen werden, also mit der Anzahl unterschiedlicher Bits zwischen zwei Vektoren.
+Binary-Search-Verfahren in der Literatur nutzen genau diese Eigenschaft, um Such- und Matching-Prozesse effizient zu gestalten.
+Der Vorteil liegt in der Einfachheit der Rechenoperationen, der Nachteil in einem möglichen Informationsverlust gegenüber Float-Repräsentationen.
+%
+\section{Quantisierung mit TurboQuant und turbovec}
+%
+TurboQuant adressiert dieses Spannungsfeld zwischen Kompaktheit und Genauigkeit über eine datenunabhängige Quantisierung.
+Die Eingabevektoren werden zunächst rotiert, sodass die Koordinaten eine gut nutzbare Verteilung annehmen, und anschließend mit skalaren Quantisierern komprimiert \cite{zandieh_2025_turboquant}.
+Für innere Produkte wird zusätzlich ein zweistufiger Ansatz beschrieben, bei dem ein MSE-Quantisierer mit einem 1-Bit-Transform auf dem Residuum kombiniert wird \cite{zandieh_2025_turboquant}.
+TurboQuant übertrifft in Nearest-Neighbor-Aufgaben bestehende Product-Quantization-Verfahren beim Recall und reduziert den Indexierungsaufwand stark \cite{zandieh_2025_turboquant}.
+\par
+Das Projekt turbovec setzt diesen Ansatz als praktisch nutzbare Implementierung um.
+Es handelt sich um einen Rust-Vektorindex mit Python-Bindings, der auf TurboQuant basiert, Online-Ingest unterstützt und Filterung zur Suchzeit erlaubt \cite{turbovec_2024}.
+Diese Filterung ist für hybride Retrieval-Architekturen wichtig, weil zunächst ein externer Kandidatenraum aufgebaut und danach nur innerhalb dieses Teilraums fein gesucht werden kann.
+%
+\section{Matryoshka-Embeddings}
+%
+Matryoshka Representation Learning ermöglicht es, Informationen in verschachtelten Repräsentationen abzulegen, sodass schon kleinere Embedding-Teile nützlich bleiben \cite{kusupati_2022_matryoshka}.
+Die Methode ist darauf ausgelegt, dass ein Modell mit unterschiedlichen Ressourcenbudgets arbeiten kann, ohne für jede Zielgröße separat trainiert werden zu müssen.
+Damit lassen sich Speicherbedarf und Suchaufwand deutlich reduzieren, während die Qualität in vielen Fällen nahe an der Vollrepräsentation bleibt \cite{kusupati_2022_matryoshka}.
+Nomic Embed v1.5 setzt diesen Ansatz praktisch um und unterstützt variable Dimensionsgrößen zwischen 64 und 768 sowie binäre Embeddings \cite{nussbaum_2024_nomic}.
+%
+\section{Hybride Retrieval-Architekturen}
+%
+Für große Datenmengen ist ein zweistufiges Retrieval besonders interessant.
+In der ersten Stufe wird ein sehr schneller und speichereffizienter Index genutzt, um eine kleine Kandidatenmenge zu erzeugen.
+In der zweiten Stufe wird diese Menge mit einer präziseren Methode nachgerankt.
+turbovec unterstützt dieses Prinzip explizit über Allowlists zur Suchzeit, also über die Beschränkung der Suche auf einen vorgegebenen Kandidatenraum \cite{turbovec_2024}.
