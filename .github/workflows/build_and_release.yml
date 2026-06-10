@@ -1,0 +1,54 @@
+name: LaTeX Build & Release
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Compile LaTeX
+        uses: xu-cheng/latex-action@v4
+        with:
+          root_file: VorlageAbschlussarbeiten.tex
+          latexmk_shell_escape: true
+
+      - name: Upload PDF
+        uses: actions/upload-artifact@v4
+        with:
+          name: pdf
+          path: VorlageAbschlussarbeiten.pdf
+          retention-days: 14
+
+  release:
+    needs: build
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Delete previous release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          PREV_TAG=$(gh release view --json tagName -q .tagName 2>/dev/null) && \
+            gh release delete "$PREV_TAG" --yes --cleanup-tag || true
+
+      - name: Download PDF
+        uses: actions/download-artifact@v4
+        with:
+          name: pdf
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: build-${{ github.sha }}
+          name: Aktuelle Version
+          make_latest: true
+          files: VorlageAbschlussarbeiten.pdf
