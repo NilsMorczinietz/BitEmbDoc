@@ -8,8 +8,8 @@ Gleichzeitig wächst der praktische Bedarf an Systemen, die auch auf begrenzter 
 Die vorliegende Projektarbeit untersucht daher die Frage, wie sich Embeddings verändern, wenn anstelle klassischer Float-Vektoren stark komprimierte Bit- beziehungsweise Niedrigbit-Repräsentationen verwendet werden.
 Aktuelle Entwicklungen zeigen, dass diese Richtung nicht nur theoretisch interessant ist, sondern auch praktisch relevant:
 Google Research beschreibt mit TurboQuant eine Methode, die Vektoren mittels Rotation und skalaren Quantisierern auf wenige Bits pro Dimension komprimiert und dabei sowohl Distortion als auch Retrieval-Qualität günstig beeinflussen soll \cite{zandieh_2025_turboquant}; das Open-Source-Projekt turbovec setzt diesen Ansatz als Vektorindex mit Python-Anbindung um \cite{turbovec_2024}.
-Parallel dazu zeigen Matryoshka-Embeddings, dass Modelle so trainiert werden können, dass auch reduzierte Embedding-Dimensionen noch leistungsfähig bleiben.
+Parallel dazu zeigen Matryoshka-Embeddings, dass Modelle so trainiert werden können, dass auch reduzierte Embedding-Dimensionen noch leistungsfähig bleiben \cite{kusupati_2022_matryoshka}.
 \par
 Aus dieser Ausgangslage ergibt sich die zentrale Forschungsfrage der Arbeit:
-Welche Auswirkungen haben Bit-Repräsentationen auf Speicherbedarf, Suchgeschwindigkeit und Retrieval-Qualität im Vergleich zu Float-Embeddings, und unter welchen Bedingungen ist ein hybrider, zweistufiger Ansatz sinnvoll?
-Der Fokus liegt damit nicht auf einer bloßen Implementierung eines weiteren Suchsystems, sondern auf dem wissenschaftlichen Vergleich unterschiedlicher Repräsentations- und Indexierungsstrategien.
+Welche semantischen Eigenschaften eines Float-Embedding-Raums bleiben unter Quantisierung erhalten, welche gehen verloren, und wie wirkt sich dieser Verlust auf die Retrieval-Qualität aus?
+Der Fokus liegt damit nicht auf einer bloßen Implementierung eines weiteren Suchsystems, sondern auf dem wissenschaftlichen Verständnis, \emph{warum} bestimmte Kompressionsverfahren auf bestimmten Daten besser oder schlechter funktionieren und welche praktischen Konsequenzen sich daraus ergeben.
