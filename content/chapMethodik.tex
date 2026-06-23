@@ -12,7 +12,7 @@ Damit geht die Arbeit über einen reinen Benchmark-Vergleich hinaus und liefert 
 Um diese Frage empirisch zu beantworten, wird ein kontrolliertes Experiment durchgeführt, das sich in fünf Phasen gliedert:
 \begin{enumerate}
   \item \textbf{Charakterisierung:} Der Float-Raum wird statistisch und geometrisch analysiert, um Erwartungen an den Quantisierungsverlust zu formulieren.
-  \item \textbf{Kompression:} Aus dem Float-Raum werden zwei komprimierte Repräsentationen abgeleitet.
+  \item \textbf{Kompression:} Aus dem Float-Raum werden komprimierte Repräsentationen abgeleitet -- variiert entlang zweier Achsen (Bittiefe und Dimensionszahl).
   \item \textbf{Strukturanalyse:} Die Fähigkeit der komprimierten Räume zur Distanz- und Nachbarschaftserhaltung wird gemessen.
   \item \textbf{Retrieval-Evaluation:} Die tatsächliche Auswirkung auf die Suchqualität wird mit etablierten Information-Retrieval-Metriken quantifiziert.
   \item \textbf{Praktische Evaluation:} Speicherbedarf und Suchgeschwindigkeit werden gemessen, um Qualität und Effizienz gegeneinander abzuwägen.
@@ -107,6 +107,33 @@ TurboQuant ist aus mehreren Gründen als Vergleichsmethode geeignet:
 %
 Der methodische Mehrwert des Vergleichs liegt darin, dass sich zwei Effekte trennen lassen:
 der Effekt der Bitreduktion selbst (sichtbar am Unterschied zwischen Float und TurboQuant) und der Effekt fehlender Vorverarbeitung (sichtbar am Unterschied zwischen TurboQuant und naiver Binarisierung).
+%
+\subsection{Dimensionsreduktion als zusätzlicher Kompressionsparameter}
+\label{sec:methodik_dimreduktion}
+%
+Die bisherigen Repräsentationen variieren ausschließlich die Bittiefe pro Dimension bei fester Dimensionszahl ($d = 768$).
+Dies bildet jedoch nur eine Achse des Kompressionsraums ab.
+Die zweite Achse -- die Anzahl der verwendeten Dimensionen -- wird ergänzend untersucht, um den vollständigen Trade-off zwischen Kompression und Qualität zu erfassen.
+%
+Konkret werden alle Quantisierungsverfahren zusätzlich auf dimensionsreduzierte Vektoren angewandt.
+Die Reduktion erfolgt über eine PCA-Projektion auf die Hauptkomponenten mit der höchsten erklärten Varianz.
+Evaluiert werden die Präfixlängen $d \in \{64, 128, 256, 384, 768\}$.
+%
+Daraus ergibt sich eine zweidimensionale Versuchsmatrix:
+\begin{itemize}
+  \item Bittiefe: Float32, 2~Bit (TurboQuant), 1~Bit (binär)
+  \item Dimensionszahl: 64, 128, 256, 384, 768
+\end{itemize}
+%
+Für jede Kombination werden dieselben Metriken erhoben wie für die Vollversionen (Distanzkorrelation, Neighborhood Overlap, NDCG@10).
+Die Ergebnisse werden als Pareto-Front dargestellt, die den optimalen Trade-off zwischen Gesamtkompression (Bits pro Vektor) und Retrieval-Qualität zeigt.
+%
+Der Gesamtspeicherbedarf einer Kombination beträgt $d \times b$ Bit pro Vektor, wobei $b$ die Bittiefe ist.
+Damit reicht das Spektrum von $768 \times 32 = 24\,576$~Bit (Float, volle Dimension) bis $64 \times 1 = 64$~Bit (binär, minimale Dimension) -- ein Kompressionsfaktor von bis zu 384.
+%
+Die Wahl von PCA als Reduktionsverfahren ist methodisch konsistent mit dem Gesamtansatz der Arbeit:
+Sie ist datenunabhängig im Sinne, dass keine aufgabenspezifische Optimierung stattfindet, und sie ist orthogonal zur anschließenden Quantisierung, sodass beide Effekte weiterhin separierbar bleiben.
+Zudem liefert die in Phase~1 ohnehin durchgeführte PCA-Analyse der erklärten Varianz direkt eine Erwartung darüber, ab welcher Präfixlänge substantielle Information verloren geht.
 %
 \section{Phase~1: Charakterisierung des Float-Raums}
 \label{sec:methodik_phase1}
