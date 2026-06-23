@@ -9,13 +9,14 @@ Diese Formulierung ist bewusst enger gefasst als eine allgemeine Frage nach der 
 Sie verlangt nicht nur die Messung eines Qualitätsverlusts, sondern auch dessen Erklärung aus den Eigenschaften des Ausgangsraums.
 Damit geht die Arbeit über einen reinen Benchmark-Vergleich hinaus und liefert ein Verständnis dafür, \emph{warum} bestimmte Kompressionsverfahren auf bestimmten Daten besser oder schlechter funktionieren.
 %
-Um diese Frage empirisch zu beantworten, wird ein kontrolliertes Experiment durchgeführt, das sich in fünf Phasen gliedert:
+Um diese Frage empirisch zu beantworten, wird ein kontrolliertes Experiment durchgeführt, das sich in sechs Phasen gliedert:
 \begin{enumerate}
   \item \textbf{Charakterisierung:} Der Float-Raum wird statistisch und geometrisch analysiert, um Erwartungen an den Quantisierungsverlust zu formulieren.
-  \item \textbf{Kompression:} Aus dem Float-Raum werden komprimierte Repräsentationen abgeleitet -- variiert entlang zweier Achsen (Bittiefe und Dimensionszahl).
+  \item \textbf{Kompression:} Aus dem Float-Raum werden komprimierte Repräsentationen abgeleitet, variiert entlang zweier Achsen (Bittiefe und Dimensionszahl).
   \item \textbf{Strukturanalyse:} Die Fähigkeit der komprimierten Räume zur Distanz- und Nachbarschaftserhaltung wird gemessen.
   \item \textbf{Retrieval-Evaluation:} Die tatsächliche Auswirkung auf die Suchqualität wird mit etablierten Information-Retrieval-Metriken quantifiziert.
   \item \textbf{Praktische Evaluation:} Speicherbedarf und Suchgeschwindigkeit werden gemessen, um Qualität und Effizienz gegeneinander abzuwägen.
+  \item \textbf{Anwendungsvalidierung:} Die Retrieval-Systeme werden als MCP-Server bereitgestellt und in einem agentenbasierten Szenario evaluiert, um die praktische Übertragbarkeit der Benchmark-Ergebnisse zu prüfen.
 \end{enumerate}
 %
 Diese Reihenfolge ist methodisch notwendig.
@@ -26,37 +27,36 @@ Die vorgeschaltete Raumanalyse ermöglicht es, Qualitätsverluste kausal auf geo
 %
 Als Evaluationsgrundlage dient der BEIR-Benchmark \cite{thakur_2021_beir}.
 BEIR stellt annotierte Relevanzurteile zwischen Anfragen und Dokumenten bereit und deckt heterogene Domänen ab.
-Die Wahl fällt auf BEIR aus zwei Gründen:
+Die Wahl fällt auf BEIR aus zwei Gründen.
 Erstens liegen manuell geprüfte Relevanzannotationen vor, sodass Retrieval-Qualität objektiv messbar ist und nicht auf synthetischen Ähnlichkeitsmaßen beruht.
 Zweitens erlaubt die Domänenvielfalt eine Aussage über die Generalisierbarkeit der Ergebnisse.
 %
 Innerhalb von BEIR werden drei Subsets verwendet:
 \begin{itemize}
-  \item \textbf{SciFact} -- wissenschaftliche Faktenverifikation mit kurzen Dokumenten und binären Relevanzurteilen.
-  \item \textbf{FiQA} -- Frage-Antwort-Paare aus dem Finanzbereich mit längeren, argumentativen Texten.
-  \item \textbf{TREC-COVID} -- biomedizinische Suchanfragen mit umfangreichen Dokumenten und mehrstufigen Relevanzannotationen.
+  \item \textbf{SciFact}, ein Datensatz zur wissenschaftlichen Faktenverifikation mit kurzen Dokumenten und binären Relevanzurteilen.
+  \item \textbf{FiQA}, ein Frage-Antwort-Datensatz aus dem Finanzbereich mit längeren, argumentativen Texten.
+  \item \textbf{TREC-COVID}, ein biomedizinischer Suchdatensatz mit umfangreichen Dokumenten und mehrstufigen Relevanzannotationen.
 \end{itemize}
 %
-Die Auswahl folgt dem Prinzip maximaler Variation entlang dreier Achsen:
-Dokumentlänge (kurz, mittel, lang), Fachsprache (Naturwissenschaft, Finanz, Biomedizin) und Annotationsschema (binär vs. mehrstufig).
+Die Auswahl folgt dem Prinzip maximaler Variation entlang dreier Achsen, nämlich Dokumentlänge (kurz, mittel, lang), Fachsprache (Naturwissenschaft, Finanz, Biomedizin) und Annotationsschema (binär vs. mehrstufig).
 Damit kann systematisch geprüft werden, ob Quantisierungseffekte domänenspezifisch auftreten oder sich über verschiedene Texttypen hinweg konsistent verhalten.
 Würde nur ein einzelnes Subset verwendet, wäre unklar, ob die Ergebnisse an der Methode oder an den Daten liegen.
 %
 \section{Embedding-Modell}
 %
 Für die Erzeugung aller Vektorrepräsentationen wird ausschließlich das Modell \texttt{bge-large-en-v1.5} \cite{xiao_2023_bge} verwendet.
-Die Beschränkung auf ein einziges Modell ist methodisch notwendig, um Konfundierung zu vermeiden:
+Die Beschränkung auf ein einziges Modell ist methodisch notwendig, um Konfundierung zu vermeiden.
 Unterschiedliche Modelle erzeugen Vektorräume mit unterschiedlicher Geometrie, sodass ein Vergleich der Quantisierungsergebnisse nicht mehr eindeutig auf die Kompressionsverfahren zurückführbar wäre.
 %
 Die Wahl fällt auf \texttt{bge-large-en-v1.5} aus folgenden Gründen:
 \begin{itemize}
   \item Das Modell erreicht zum Zeitpunkt der Modellauswahl konsistent hohe Werte auf dem MTEB-Leaderboard \cite{muennighoff_2022_mteb} und gilt als etablierter Referenzpunkt in der Embedding-Literatur.
-  \item Es erzeugt Vektoren mit 768 Dimensionen -- genügend Struktur für eine aussagekräftige Quantisierungsanalyse, aber nicht so hochdimensional, dass die Berechnungen unpraktikabel werden.
+  \item Es erzeugt Vektoren mit 768 Dimensionen, genügend Struktur für eine aussagekräftige Quantisierungsanalyse, aber nicht so hochdimensional, dass die Berechnungen unpraktikabel werden.
   \item Als Open-Source-Modell ermöglicht es vollständige Reproduzierbarkeit.
 \end{itemize}
 %
 Eine naheliegende Alternative wäre \texttt{nomic-embed-text-v1.5} \cite{nussbaum_2024_nomic}, das durch Matryoshka-Training bereits auf variable Dimensionsgrößen und binäre Ausgabe optimiert ist.
-Genau diese Optimierung macht es für die vorliegende Untersuchung jedoch weniger geeignet:
+Genau diese Optimierung macht es für die vorliegende Untersuchung jedoch weniger geeignet.
 Da das Ziel ist, den Informationsverlust bei nachträglicher Quantisierung zu messen, würde ein bereits auf Kompression trainiertes Modell den Effekt der Quantisierungsverfahren selbst verschleiern.
 Die Ergebnisse wären nicht mehr auf das Kompressionsverfahren, sondern auf die Trainingsoptimierung des Modells zurückführbar.
 %
@@ -67,16 +67,16 @@ Für jedes Dokument im Datensatz wird ein Embedding-Vektor $\mathbf{x} \in \math
 Die resultierende Matrix $\mathbf{X} \in \mathbb{R}^{N \times 768}$ bildet die Ground Truth, gegen die alle komprimierten Repräsentationen evaluiert werden.
 %
 Aus diesem Float-Raum werden zwei komprimierte Varianten \emph{nachträglich} abgeleitet.
-Dieser Ansatz -- nachträgliche Kompression eines bestehenden Float-Raums -- ist eine bewusste methodische Entscheidung gegenüber der Alternative, ein Modell zu verwenden, das direkt binäre oder quantisierte Ausgaben erzeugt (etwa durch Matryoshka-Training oder spezialisierte Binary-Embedding-Modelle).
+Dieser Ansatz, also die nachträgliche Kompression eines bestehenden Float-Raums, ist eine bewusste methodische Entscheidung gegenüber der Alternative, ein Modell zu verwenden, das direkt binäre oder quantisierte Ausgaben erzeugt (etwa durch Matryoshka-Training oder spezialisierte Binary-Embedding-Modelle).
 Die nachträgliche Kompression ist für die Forschungsfrage aus drei Gründen notwendig:
 \begin{enumerate}
   \item Sie ermöglicht einen kontrollierten Vorher-Nachher-Vergleich. Ohne einen Float-Referenzraum kann der Informationsverlust nicht gemessen werden, weil kein unkomprimierter Zustand existiert, gegen den evaluiert werden könnte.
-  \item Sie isoliert genau eine unabhängige Variable -- das Kompressionsverfahren. Bei end-to-end trainierten Modellen wären Unterschiede in der Retrieval-Qualität nicht eindeutig auf die Kompression zurückführbar, sondern könnten ebenso an Architektur, Trainingsdaten oder Verlustfunktion liegen.
+  \item Sie isoliert genau eine unabhängige Variable, nämlich das Kompressionsverfahren. Bei end-to-end trainierten Modellen wären Unterschiede in der Retrieval-Qualität nicht eindeutig auf die Kompression zurückführbar, sondern könnten ebenso an Architektur, Trainingsdaten oder Verlustfunktion liegen.
   \item Sie bildet das praxisrelevante Szenario ab, in dem bestehende Float-Embeddings nachträglich komprimiert werden sollen, ohne das zugrunde liegende Modell austauschen zu müssen.
 \end{enumerate}
 %
-Die Wahl genau zweier komprimierter Varianten ist nicht willkürlich, sondern bildet die beiden Endpunkte eines Kompression-Qualität-Spektrums ab:
-maximale Kompression bei minimaler Methodik (naive Binarisierung) und moderate Kompression bei informierter Methodik (TurboQuant).
+Die Wahl genau zweier komprimierter Varianten ist nicht willkürlich, sondern bildet die beiden Endpunkte eines Kompression-Qualität-Spektrums ab.
+Die eine Variante steht für maximale Kompression bei minimaler Methodik (naive Binarisierung), die andere für moderate Kompression bei informierter Methodik (TurboQuant).
 %
 \subsection{Binäre Repräsentation}
 %
@@ -88,10 +88,10 @@ Die naive Binarisierung wendet einen Vorzeichenschwellwert an:
 Jede Dimension wird auf ein einzelnes Bit reduziert, was einem Kompressionsfaktor von 32 gegenüber Float32 entspricht.
 Die Ähnlichkeit zweier binärer Vektoren wird über die Hamming-Distanz bestimmt.
 %
-Dieses Verfahren dient als untere Basislinie:
+Dieses Verfahren dient als untere Basislinie.
 Es ist das einfachste denkbare Quantisierungsverfahren, das keine Kenntnis über die Datenverteilung nutzt.
 Jede informiertere Methode sollte besser abschneiden.
-Falls die naive Binarisierung bereits gute Ergebnisse liefert, deutet dies darauf hin, dass der Float-Raum Eigenschaften besitzt, die Quantisierung inhärent begünstigen -- etwa eine Konzentration der Information im Vorzeichen.
+Falls die naive Binarisierung bereits gute Ergebnisse liefert, deutet dies darauf hin, dass der Float-Raum Eigenschaften besitzt, die Quantisierung inhärent begünstigen, etwa eine Konzentration der Information im Vorzeichen.
 %
 \subsection{TurboQuant-Repräsentation}
 %
@@ -105,15 +105,15 @@ TurboQuant ist aus mehreren Gründen als Vergleichsmethode geeignet:
   \item Der Kompressionsfaktor liegt zwischen Float und Binär, was eine Einordnung entlang des Kompression-Qualität-Spektrums ermöglicht.
 \end{itemize}
 %
-Der methodische Mehrwert des Vergleichs liegt darin, dass sich zwei Effekte trennen lassen:
-der Effekt der Bitreduktion selbst (sichtbar am Unterschied zwischen Float und TurboQuant) und der Effekt fehlender Vorverarbeitung (sichtbar am Unterschied zwischen TurboQuant und naiver Binarisierung).
+Der methodische Mehrwert des Vergleichs liegt darin, dass sich zwei Effekte trennen lassen.
+Der Effekt der Bitreduktion selbst wird am Unterschied zwischen Float und TurboQuant sichtbar, der Effekt fehlender Vorverarbeitung am Unterschied zwischen TurboQuant und naiver Binarisierung.
 %
 \subsection{Dimensionsreduktion als zusätzlicher Kompressionsparameter}
 \label{sec:methodik_dimreduktion}
 %
 Die bisherigen Repräsentationen variieren ausschließlich die Bittiefe pro Dimension bei fester Dimensionszahl ($d = 768$).
 Dies bildet jedoch nur eine Achse des Kompressionsraums ab.
-Die zweite Achse -- die Anzahl der verwendeten Dimensionen -- wird ergänzend untersucht, um den vollständigen Trade-off zwischen Kompression und Qualität zu erfassen.
+Die zweite Achse, die Anzahl der verwendeten Dimensionen, wird ergänzend untersucht, um den vollständigen Trade-off zwischen Kompression und Qualität zu erfassen.
 %
 Konkret werden alle Quantisierungsverfahren zusätzlich auf dimensionsreduzierte Vektoren angewandt.
 Die Reduktion erfolgt über eine PCA-Projektion auf die Hauptkomponenten mit der höchsten erklärten Varianz.
@@ -129,28 +129,27 @@ Für jede Kombination werden dieselben Metriken erhoben wie für die Vollversion
 Die Ergebnisse werden als Pareto-Front dargestellt, die den optimalen Trade-off zwischen Gesamtkompression (Bits pro Vektor) und Retrieval-Qualität zeigt.
 %
 Der Gesamtspeicherbedarf einer Kombination beträgt $d \times b$ Bit pro Vektor, wobei $b$ die Bittiefe ist.
-Damit reicht das Spektrum von $768 \times 32 = 24\,576$~Bit (Float, volle Dimension) bis $64 \times 1 = 64$~Bit (binär, minimale Dimension) -- ein Kompressionsfaktor von bis zu 384.
+Damit reicht das Spektrum von $768 \times 32 = 24\,576$~Bit (Float, volle Dimension) bis $64 \times 1 = 64$~Bit (binär, minimale Dimension), ein Kompressionsfaktor von bis zu 384.
 %
-Die Wahl von PCA als Reduktionsverfahren ist methodisch konsistent mit dem Gesamtansatz der Arbeit:
-Sie ist aufgabenunabhängig im Sinne, dass keine überwachte oder aufgabenspezifische Optimierung stattfindet -- die Hauptkomponenten werden zwar aus den Daten geschätzt, aber ohne Kenntnis der Retrieval-Aufgabe oder Relevanzurteile.
-Zudem ist sie orthogonal zur anschließenden Quantisierung, sodass beide Effekte weiterhin separierbar bleiben.
-Zudem liefert die in Phase~1 ohnehin durchgeführte PCA-Analyse der erklärten Varianz direkt eine Erwartung darüber, ab welcher Präfixlänge substantielle Information verloren geht.
+Die Wahl von PCA als Reduktionsverfahren ist methodisch konsistent mit dem Gesamtansatz der Arbeit.
+Sie ist aufgabenunabhängig in dem Sinne, dass keine überwachte oder aufgabenspezifische Optimierung stattfindet; die Hauptkomponenten werden zwar aus den Daten geschätzt, aber ohne Kenntnis der Retrieval-Aufgabe oder Relevanzurteile.
+Sie ist orthogonal zur anschließenden Quantisierung, sodass beide Effekte weiterhin separierbar bleiben.
+Darüber hinaus liefert die in Phase~1 ohnehin durchgeführte PCA-Analyse der erklärten Varianz direkt eine Erwartung darüber, ab welcher Präfixlänge substantielle Information verloren geht.
 %
 \section{Phase~1: Charakterisierung des Float-Raums}
 \label{sec:methodik_phase1}
 %
 Bevor Quantisierung stattfindet, wird der Float-Raum analysiert.
-Diese Phase dient nicht der Bewertung der Kompressionsverfahren, sondern der Formulierung von Erwartungen:
+Diese Phase dient nicht der Bewertung der Kompressionsverfahren, sondern der Formulierung von Erwartungen.
 Aus den Eigenschaften des Raums lässt sich vorhersagen, wo Quantisierung gut funktionieren wird und wo nicht.
 Diese Vorhersagen werden in den späteren Phasen empirisch überprüft.
 %
 \subsection{Normverteilung}
 %
 Für alle Vektoren wird die L2-Norm $\|\mathbf{x}\|_2$ berechnet und als Histogramm dargestellt.
-Die Normverteilung beantwortet eine konkrete Frage:
-Liegen die Vektoren annähernd auf einer Hypersphäre, oder existieren signifikante Normunterschiede?
+Die Normverteilung beantwortet eine konkrete Frage, nämlich ob die Vektoren annähernd auf einer Hypersphäre liegen oder ob signifikante Normunterschiede existieren.
 %
-Diese Analyse ist für die Binarisierung direkt relevant:
+Diese Analyse ist für die Binarisierung direkt relevant.
 Die Vorzeichenfunktion verwirft die Norminformation vollständig.
 Wenn die Normen stark variieren, geht bei der Binarisierung Information verloren, die nicht im Vorzeichen kodiert ist.
 Wenn die Normen hingegen nahezu konstant sind, ist der Informationsgehalt der Norm gering und ihr Verlust unproblematisch.
@@ -159,12 +158,12 @@ Wenn die Normen hingegen nahezu konstant sind, ist der Informationsgehalt der No
 %
 Für jede der 768 Dimensionen werden vier Kennzahlen berechnet:
 \begin{itemize}
-  \item \textbf{Mittelwert und Standardabweichung} -- beschreiben Lage und Streuung.
-  \item \textbf{Schiefe (Skewness)} -- zeigt, ob die Verteilung symmetrisch um Null liegt. Bei starker Schiefe liegt der Vorzeichenschwellwert $x_i = 0$ der Binarisierung nicht am informationstheoretisch optimalen Punkt, da eine Seite der Verteilung mehr Masse trägt und das resultierende Bit damit weniger Information kodiert.
-  \item \textbf{Kurtosis} -- misst die Schwere der Verteilungsränder. Hohe Kurtosis deutet auf Ausreißer hin, die bei Quantisierung auf wenige Stufen besonders stark verzerrt werden, weil die extremen Werte auf dieselben Quantisierungsgrenzen abgebildet werden wie die häufigen.
+  \item \textbf{Mittelwert und Standardabweichung} beschreiben Lage und Streuung.
+  \item \textbf{Schiefe (Skewness)} zeigt, ob die Verteilung symmetrisch um Null liegt. Bei starker Schiefe liegt der Vorzeichenschwellwert $x_i = 0$ der Binarisierung nicht am informationstheoretisch optimalen Punkt, da eine Seite der Verteilung mehr Masse trägt und das resultierende Bit damit weniger Information kodiert.
+  \item \textbf{Kurtosis} misst die Schwere der Verteilungsränder. Hohe Kurtosis deutet auf Ausreißer hin, die bei Quantisierung auf wenige Stufen besonders stark verzerrt werden, weil die extremen Werte auf dieselben Quantisierungsgrenzen abgebildet werden wie die häufigen.
 \end{itemize}
 %
-Diese Kennzahlen sind nicht Selbstzweck, sondern liefern spezifische Vorhersagen:
+Diese Kennzahlen sind nicht Selbstzweck, sondern liefern spezifische Vorhersagen.
 Dimensionen mit hoher Schiefe sollten bei der Binarisierung mehr Fehler verursachen als symmetrische Dimensionen.
 Dimensionen mit hoher Kurtosis sollten bei TurboQuant (2~Bit, also 4 Stufen) mehr Quantisierungsfehler zeigen.
 Ob diese Vorhersagen zutreffen, wird in Phase~2 überprüft.
@@ -173,11 +172,11 @@ Ob diese Vorhersagen zutreffen, wird in Phase~2 überprüft.
 %
 Die intrinsische Dimensionalität (vgl. Kapitel~\ref{chap:grundlagen}) wird über zwei komplementäre Verfahren geschätzt:
 \begin{itemize}
-  \item \textbf{TwoNN} \cite{facco_2017_twonn} -- ein nächste-Nachbarn-basierter Schätzer, der die Verhältnisse der Abstände zum ersten und zweiten Nachbarn auswertet. Er erfasst die lokale Dimensionalität der Datenmannigfaltigkeit.
-  \item \textbf{PCA -- erklärte Varianz} -- die Anzahl der Hauptkomponenten, die 95\% der Gesamtvarianz erklären. Dieses Maß erfasst die globale lineare Dimensionalität.
+  \item \textbf{TwoNN} \cite{facco_2017_twonn}, ein nächste-Nachbarn-basierter Schätzer, der die Verhältnisse der Abstände zum ersten und zweiten Nachbarn auswertet. Er erfasst die lokale Dimensionalität der Datenmannigfaltigkeit.
+  \item \textbf{PCA, erklärte Varianz}, also die Anzahl der Hauptkomponenten, die 95\% der Gesamtvarianz erklären. Dieses Maß erfasst die globale lineare Dimensionalität.
 \end{itemize}
 %
-Zwei Schätzer statt eines sind notwendig, weil sie verschiedene Aspekte messen:
+Zwei Schätzer statt eines sind notwendig, weil sie verschiedene Aspekte messen.
 PCA erfasst globale lineare Redundanz, TwoNN erfasst lokale Mannigfaltigkeitsstruktur.
 Stimmen beide überein, ist die Aussage robust.
 Divergieren sie, deutet dies auf nichtlineare Struktur hin, die PCA nicht erkennt.
@@ -185,19 +184,17 @@ Divergieren sie, deutet dies auf nichtlineare Struktur hin, die PCA nicht erkenn
 \section{Phase~2: Distanz- und Fehleranalyse}
 \label{sec:methodik_phase2}
 %
-Diese Phase beantwortet die Kernfrage:
-Bleiben die geometrischen Beziehungen zwischen Dokumenten unter Quantisierung erhalten?
+Diese Phase beantwortet die Kernfrage, ob die geometrischen Beziehungen zwischen Dokumenten unter Quantisierung erhalten bleiben.
 %
 \subsection{Paarweise Distanzkorrelation}
 %
 Aus dem Dokumentenkorpus werden 10\,000 Paare gleichverteilt zufällig gezogen.
-Für jedes Paar werden drei Distanzwerte berechnet:
-Cosine-Similarity im Float-Raum, Hamming-Distanz im binären Raum und die entsprechende Distanz im TurboQuant-Raum.
+Für jedes Paar werden drei Distanzwerte berechnet, nämlich die Cosine-Similarity im Float-Raum, die Hamming-Distanz im binären Raum und die entsprechende Distanz im TurboQuant-Raum.
 %
 Die Stichprobengröße von 10\,000 Paaren ist so gewählt, dass das 95\%-Konfidenzintervall für den Pearson-Korrelationskoeffizienten bei $r = 0{,}9$ eine Breite von weniger als $\pm 0{,}005$ besitzt.
 Damit sind selbst kleine Unterschiede zwischen den Verfahren statistisch auflösbar.
 %
-Die Distanzerhaltung wird über zwei Korrelationsmaße quantifiziert:
+Die Distanzerhaltung wird über zwei Korrelationsmaße quantifiziert.
 %
 \paragraph{Pearson~$r$.}
 Der Pearson-Korrelationskoeffizient misst den linearen Zusammenhang zwischen Float-Distanz und komprimierter Distanz.
@@ -205,10 +202,9 @@ Ein hoher Wert nahe~1 bedeutet, dass die Quantisierung die Distanzen lediglich l
 %
 \paragraph{Spearman~$\rho$.}
 Der Spearman-Rangkorrelationskoeffizient misst, ob die Rangordnung der Distanzen erhalten bleibt.
-Für Retrieval-Anwendungen ist dieses Maß entscheidender als Pearson~$r$:
-Solange das Ranking korrekt ist, sind absolute Distanzverzerrungen irrelevant.
+Für Retrieval-Anwendungen ist dieses Maß entscheidender als Pearson~$r$, denn solange das Ranking korrekt ist, sind absolute Distanzverzerrungen irrelevant.
 %
-Die Kombination beider Maße erlaubt eine differenzierte Aussage:
+Die Kombination beider Maße erlaubt eine differenzierte Aussage.
 Sind beide hoch, ist die Quantisierung strukturtreu.
 Ist nur Spearman hoch, eignet sich die Repräsentation für Ranking, aber nicht für distanzbasierte Schwellwertentscheidungen.
 Sind beide niedrig, ist die semantische Struktur substantiell beschädigt.
@@ -220,19 +216,19 @@ Für jedes der 10\,000 Paare wird der Fehler $|d_\text{float} - d_\text{quantize
 %
 Als Aggregatmaße dienen:
 \begin{itemize}
-  \item \textbf{MAE} (Mean Absolute Error) -- die durchschnittliche Abweichung, robust gegenüber Ausreißern.
-  \item \textbf{RMSE} (Root Mean Squared Error) -- gewichtet große Abweichungen stärker und zeigt, ob einzelne Paare besonders stark verzerrt werden.
+  \item \textbf{MAE} (Mean Absolute Error), die durchschnittliche Abweichung, robust gegenüber Ausreißern.
+  \item \textbf{RMSE} (Root Mean Squared Error), der große Abweichungen stärker gewichtet und zeigt, ob einzelne Paare besonders stark verzerrt werden.
 \end{itemize}
 %
 Während Pearson und Spearman die \emph{relative} Struktur bewerten, quantifizieren MAE und RMSE die \emph{absolute} Verzerrung.
-Beide Perspektiven sind notwendig:
-Ein Verfahren mit hoher Korrelation, aber hohem MAE transformiert die Distanzen zwar monoton korrekt, verschiebt aber das gesamte Distanzniveau -- was für Schwellwert-basierte Systeme problematisch wäre.
+Beide Perspektiven sind notwendig.
+Ein Verfahren mit hoher Korrelation, aber hohem MAE transformiert die Distanzen zwar monoton korrekt, verschiebt aber das gesamte Distanzniveau. Für Schwellwert-basierte Systeme wäre dies problematisch.
 %
 \section{Phase~3: Nachbarschaftserhaltung}
 \label{sec:methodik_phase3}
 %
 Die Distanzkorrelation aus Phase~2 betrachtet globale Paare.
-Für Retrieval ist jedoch die \emph{lokale} Struktur entscheidend:
+Für Retrieval ist jedoch die \emph{lokale} Struktur entscheidend.
 Es kommt nicht darauf an, ob weit entfernte Dokumente korrekt als weit entfernt erkannt werden, sondern ob die nächsten Nachbarn eines Dokuments dieselben bleiben.
 %
 \subsection{Neighborhood Overlap}
@@ -245,7 +241,10 @@ Der Overlap ist der Anteil der Nachbarn, die in beiden Mengen enthalten sind:
 \end{equation}
 %
 Dieser Wert wird über alle Dokumente gemittelt und als Funktion von $k$ (für $k \in \{10, 50, 100\}$) berichtet.
-Die Variation von $k$ ist wichtig, weil Retrieval-Systeme typischerweise nur die Top-10 oder Top-100 verwenden -- der Overlap bei $k = 10$ ist für die Praxis relevanter als bei $k = 100$, aber statistisch instabiler.
+Die Variation von $k$ ist wichtig, weil Retrieval-Systeme typischerweise nur die Top-10 oder Top-100 verwenden; der Overlap bei $k = 10$ ist für die Praxis relevanter als bei $k = 100$, aber statistisch instabiler.
+%
+Als Referenzwert dient der erwartete Overlap bei zufälligem Ranking: $\mathbb{E}[\text{Overlap}] = k / N$, wobei $N$ die Korpusgröße ist.
+Für die verwendeten Datensätze liegt dieser Zufalls-Overlap unter 0{,}02, sodass bereits moderate Overlap-Werte eine deutliche Strukturerhaltung anzeigen.
 %
 Als Referenzwert dient der erwartete Overlap bei zufälligem Ranking: $\mathbb{E}[\text{Overlap}] = k / N$, wobei $N$ die Korpusgröße ist.
 Für die verwendeten Datensätze liegt dieser Zufalls-Overlap unter 0{,}02, sodass bereits moderate Overlap-Werte eine deutliche Strukturerhaltung anzeigen.
@@ -253,8 +252,7 @@ Für die verwendeten Datensätze liegt dieser Zufalls-Overlap unter 0{,}02, soda
 \subsection{Trustworthiness}
 %
 Neighborhood Overlap ist symmetrisch und unterscheidet nicht zwischen zwei verschiedenen Fehlertypen.
-Trustworthiness \cite{venna_2006_trustworthiness} differenziert:
-Sie misst, ob im komprimierten Raum \emph{falsche} Nachbarn eingeführt werden -- also Dokumente, die im Float-Raum weit entfernt sind, im Bit-Raum aber nahe erscheinen.
+Trustworthiness \cite{venna_2006_trustworthiness} differenziert und misst, ob im komprimierten Raum \emph{falsche} Nachbarn eingeführt werden, also Dokumente, die im Float-Raum weit entfernt sind, im Bit-Raum aber nahe erscheinen.
 %
 Formal:
 \begin{equation}
@@ -263,15 +261,14 @@ Formal:
 %
 wobei $U_k(i)$ die Menge der Punkte bezeichnet, die im komprimierten Raum unter den $k$ Nachbarn von $i$ sind, aber im Float-Raum nicht, und $r(i,j)$ der Rang von $j$ bezüglich $i$ im Float-Raum ist.
 %
-Dieser Fehlertyp ist für Retrieval besonders schädlich:
-Falsche Nachbarn bedeuten irrelevante Suchergebnisse, die dem Nutzer angezeigt werden.
+Dieser Fehlertyp ist für Retrieval besonders schädlich, da falsche Nachbarn irrelevante Suchergebnisse bedeuten, die dem Nutzer angezeigt werden.
 Ein Wert von $T = 1$ bedeutet, dass keine falschen Nachbarn eingeführt werden.
 %
-Die Wahl, Trustworthiness statt des Gegenstücks Continuity zu verwenden, ist bewusst:
+Die Wahl, Trustworthiness statt des Gegenstücks Continuity zu verwenden, ist bewusst.
 Continuity misst, ob echte Nachbarn verloren gehen.
-Für die Forschungsfrage ist aber Trustworthiness aussagekräftiger, weil sie direkt die Precision der Nachbarschaft quantifiziert -- und Precision ist im Retrieval-Kontext die nutzerrelevante Größe.
-Continuity wird nicht separat berichtet, da sie eine konzeptionell andere Fehlerperspektive einnimmt (fehlende Nachbarn statt falsche Nachbarn):
-Für ein Retrieval-System ist es gravierender, irrelevante Dokumente anzuzeigen (niedriges Trustworthiness), als einzelne relevante Dokumente zu übersehen (niedrige Continuity), solange genügend relevante Treffer verbleiben -- was der Recall in Phase~4 direkt überprüft.
+Für die Forschungsfrage ist aber Trustworthiness aussagekräftiger, weil sie direkt die Precision der Nachbarschaft quantifiziert, und Precision ist im Retrieval-Kontext die nutzerrelevante Größe.
+Continuity wird nicht separat berichtet, da sie eine konzeptionell andere Fehlerperspektive einnimmt (fehlende Nachbarn statt falsche Nachbarn).
+Für ein Retrieval-System ist es gravierender, irrelevante Dokumente anzuzeigen (niedriges Trustworthiness), als einzelne relevante Dokumente zu übersehen (niedrige Continuity), solange genügend relevante Treffer verbleiben. Ob Letzteres der Fall ist, überprüft der Recall in Phase~4 direkt.
 %
 \section{Phase~4: Retrieval-Evaluation}
 \label{sec:methodik_phase4}
@@ -296,9 +293,9 @@ Das Experiment soll ausschließlich den Effekt der Kompression isolieren, nicht 
 %
 Die Retrieval-Qualität wird über vier Standardmetriken bewertet:
 \begin{itemize}
-  \item \textbf{NDCG@10} -- die primäre Metrik, da sie sowohl Relevanzgrade als auch Rankingpositionen berücksichtigt und in der BEIR-Literatur als Hauptmetrik etabliert ist.
-  \item \textbf{Recall@10} und \textbf{Recall@100} -- messen, welcher Anteil der relevanten Dokumente in den Top-$k$ enthalten ist. Recall@100 ist besonders relevant für zweistufige Systeme, in denen die erste Stufe eine Kandidatenmenge erzeugt.
-  \item \textbf{MRR} (Mean Reciprocal Rank) -- misst, an welcher Position das erste relevante Dokument erscheint.
+  \item \textbf{NDCG@10}, die primäre Metrik, da sie sowohl Relevanzgrade als auch Rankingpositionen berücksichtigt und in der BEIR-Literatur als Hauptmetrik etabliert ist.
+  \item \textbf{Recall@10} und \textbf{Recall@100} messen, welcher Anteil der relevanten Dokumente in den Top-$k$ enthalten ist. Recall@100 ist besonders relevant für zweistufige Systeme, in denen die erste Stufe eine Kandidatenmenge erzeugt.
+  \item \textbf{MRR} (Mean Reciprocal Rank) misst, an welcher Position das erste relevante Dokument erscheint.
 \end{itemize}
 %
 \subsection{Statistische Signifikanz}
@@ -334,23 +331,81 @@ Zusätzlich wird der tatsächliche Speicherverbrauch des gesamten Index gemessen
 Die Suchgeschwindigkeit wird für verschiedene Korpusgrößen gemessen, um das Skalierungsverhalten zu erfassen.
 Gemessen werden:
 \begin{itemize}
-  \item \textbf{Indexierungszeit} -- die Zeit, um alle Dokumente in die jeweilige Repräsentation zu überführen und zu indexieren.
-  \item \textbf{Query-Latenz} -- die mittlere Zeit pro Query bei Brute-Force-Suche.
-  \item \textbf{Throughput} -- Queries pro Sekunde.
+  \item \textbf{Indexierungszeit}, also die Zeit, um alle Dokumente in die jeweilige Repräsentation zu überführen und zu indexieren.
+  \item \textbf{Query-Latenz}, die mittlere Zeit pro Query bei Brute-Force-Suche.
+  \item \textbf{Throughput}, gemessen in Queries pro Sekunde.
 \end{itemize}
 %
 Die Messung erfolgt auf den drei BEIR-Subsets, die unterschiedliche Korpusgrößen abdecken (SciFact: $\sim$5\,000, FiQA: $\sim$57\,000, TREC-COVID: $\sim$171\,000 Dokumente).
 Damit ergibt sich ein natürliches Skalierungsspektrum, ohne synthetische Daten erzeugen zu müssen.
 %
+\section{Phase~6: Anwendungsvalidierung über MCP-Server}
+\label{sec:methodik_phase6}
+%
+Die Phasen~1 bis~5 evaluieren die Kompressionsverfahren unter kontrollierten Laborbedingungen mit bekannten Datensätzen, exakter Suche und isolierter Messung einzelner Größen.
+Diese Kontrolle ist für die wissenschaftliche Aussagekraft notwendig, schließt aber eine Frage aus, die für die praktische Relevanz der Ergebnisse zentral ist.
+Es bleibt offen, ob sich die gemessene Retrieval-Qualität auf ein reales Anwendungsszenario überträgt, in dem zusätzliche Faktoren wie Netzwerklatenz, Serialisierung und agentengesteuerte Query-Formulierung hinzukommen.
+%
+Phase~6 adressiert diese Frage durch eine Anwendungsvalidierung.
+Die in den vorherigen Phasen untersuchten Retrieval-Backends (Float, binär, TurboQuant) werden als MCP-Server implementiert und von einem LLM-Agenten über das Model Context Protocol (vgl. Kapitel~\ref{sec:grundlagen_mcp}) als Retrieval-Werkzeug genutzt.
+%
+\subsection{Ziel und Abgrenzung}
+%
+Das Ziel von Phase~6 ist nicht die Entwicklung eines produktionsreifen Systems, sondern die Beantwortung einer spezifischen Validierungsfrage.
+Es soll geprüft werden, ob die unter Laborbedingungen gemessenen Qualitäts- und Latenzunterschiede zwischen den Repräsentationsräumen mit dem beobachtbaren Verhalten in einer realistischen Werkzeugkette übereinstimmen.
+%
+Konkret prüft Phase~6 zwei Hypothesen:
+\begin{enumerate}
+  \item \textbf{Qualitätsübertragung:} Die in Phase~4 gemessenen NDCG-Unterschiede zwischen den Repräsentationsräumen spiegeln sich in der Antwortqualität des Agenten wider. Ein Retrieval-Backend, das im BEIR-Benchmark signifikant schlechter abschneidet, liefert dem Agenten schlechtere Kontextdokumente, was sich in der Antwortqualität niederschlägt.
+  \item \textbf{Latenzvorteil:} Die in Phase~5 gemessenen Geschwindigkeitsunterschiede manifestieren sich als wahrnehmbarer Unterschied in der End-to-End-Antwortzeit des Agenten. Insbesondere binäre Repräsentationen sollten die Tool-Call-Latenz messbar senken.
+\end{enumerate}
+%
+Die Abgrenzung ist wichtig.
+Phase~6 evaluiert nicht den MCP-Server als Software-Artefakt (Architektur, Skalierbarkeit, Fehlerbehandlung), sondern nutzt ihn als Mittel, um die Generalisierbarkeit der wissenschaftlichen Ergebnisse aus den vorherigen Phasen zu prüfen.
+%
+\subsection{Architektur}
+%
+Die Implementierung folgt dem minimalen Aufbau, der notwendig ist, um die Validierungsfrage zu beantworten:
+\begin{itemize}
+  \item Drei identische MCP-Server, die sich ausschließlich im Retrieval-Backend unterscheiden (Float/Cosine, Binär/Hamming, TurboQuant).
+  \item Jeder Server exponiert ein einzelnes Tool \texttt{search}, das eine natürlichsprachliche Query entgegennimmt und die Top-$k$ Dokumente mit Relevanzscores zurückgibt.
+  \item Ein LLM-Agent, der über den MCP-Client auf das jeweilige Retrieval-Tool zugreift und auf Basis der zurückgegebenen Dokumente eine Antwort generiert.
+\end{itemize}
+%
+Durch die identische Schnittstelle ist sichergestellt, dass Unterschiede im Agentenverhalten ausschließlich auf das Retrieval-Backend zurückführbar sind.
+Der Agent, das Prompt-Template und die Dokumentenbasis bleiben über alle drei Varianten konstant.
+%
+\subsection{Evaluationsprotokoll}
+%
+Die Evaluation verwendet eine Teilmenge der BEIR-Queries, für die in Phase~4 bereits Retrieval-Metriken vorliegen.
+Für jede Query wird der Agent mit jedem der drei Backends ausgeführt.
+Gemessen werden:
+\begin{itemize}
+  \item \textbf{End-to-End-Latenz:} Die Zeit vom Absenden der Nutzeranfrage bis zur vollständigen Agentenantwort, aufgeschlüsselt in Retrieval-Latenz (Tool-Call) und Generierungslatenz.
+  \item \textbf{Retrieval-Übereinstimmung:} Der Overlap zwischen den vom MCP-Server zurückgegebenen Dokumenten und den Top-$k$-Ergebnissen der exakten Suche aus Phase~4. Dieser Wert quantifiziert, ob die MCP-Integration selbst (Serialisierung, Query-Weiterleitung) die Ergebnisse verändert.
+  \item \textbf{Antwortqualität:} Bewertet wird, ob der Agent auf Basis der zurückgegebenen Dokumente korrekte und vollständige Antworten generiert. Eine automatisierte Bewertung über LLM-as-Judge \cite{zheng_2023_llmjudge} ergänzt die manuelle Stichprobe.
+\end{itemize}
+%
+\subsection{Erwartete Ergebnisse}
+%
+Aus den Ergebnissen der Phasen~4 und~5 lassen sich Erwartungen ableiten.
+Die Retrieval-Übereinstimmung sollte nahe 1{,}0 liegen, da der MCP-Server lediglich eine Schnittstelle um dieselbe Suchlogik legt.
+Abweichungen würden auf Implementierungsfehler oder unerwartete Effekte der Query-Transformation durch den Agenten hindeuten.
+Die Latenzdifferenz zwischen Float und Binär sollte sich bei den verwendeten Korpusgrößen (5\,000 bis 171\,000 Dokumente) im einstelligen Millisekundenbereich bewegen.
+Ob dieser Unterschied im Kontext der deutlich höheren LLM-Generierungslatenz praktisch relevant ist, wird quantifiziert.
+Falls das binäre Backend bei bestimmten Queries schlechtere Dokumente liefert (gemäß Phase~4), sollte sich dies in der Antwortqualität niederschlagen.
+Damit ließe sich die kausale Kette von Quantisierungsverlust über Retrieval-Degradation bis zur Endnutzer-Auswirkung empirisch schließen.
+%
 \section{Synthese und Interpretation}
 %
 Die abschließende Analyse verknüpft die Ergebnisse aller Phasen zu einer kohärenten Beantwortung der Forschungsfrage.
 %
-Konkret werden drei Leitfragen beantwortet:
+Konkret werden vier Leitfragen beantwortet:
 \begin{enumerate}
   \item \textbf{Was bleibt erhalten?} Welche Aspekte der semantischen Struktur (globale Distanzen, lokale Nachbarschaften, Cluster) überleben die Quantisierung intakt?
   \item \textbf{Was geht verloren?} Wo treten systematische Verzerrungen auf, und lassen sich diese aus den in Phase~1 identifizierten Raumeigenschaften erklären?
   \item \textbf{Was bedeutet das für die Praxis?} Ab welchem Qualitätsverlust wird der Speicher- und Geschwindigkeitsvorteil durch unbrauchbare Suchergebnisse zunichte gemacht?
+  \item \textbf{Überträgt sich das auf reale Systeme?} Bestätigt die Anwendungsvalidierung über MCP die unter Laborbedingungen gewonnenen Erkenntnisse, oder treten in der Werkzeugkette Effekte auf, die die kontrollierte Evaluation nicht abbildet?
 \end{enumerate}
 %
-Diese Struktur stellt sicher, dass die Arbeit nicht bei der Beobachtung stehen bleibt, sondern eine wissenschaftlich fundierte Empfehlung abgeben kann, unter welchen Bedingungen welche Kompressionstiefe gerechtfertigt ist.
+Diese Struktur stellt sicher, dass die Arbeit nicht bei der Beobachtung stehen bleibt, sondern eine wissenschaftlich fundierte Empfehlung abgeben kann, unter welchen Bedingungen welche Kompressionstiefe gerechtfertigt ist, sowohl im kontrollierten Benchmark als auch in einer realistischen Einsatzumgebung.

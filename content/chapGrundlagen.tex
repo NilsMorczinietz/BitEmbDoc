@@ -23,17 +23,17 @@ Bei Brute-Force-Suche skaliert die Suchzeit linear mit der Korpusgröße, was f�
 %
 \section{Quantisierung}
 %
-Quantisierung bezeichnet die Abbildung eines kontinuierlichen Wertebereichs auf eine endliche Menge diskreter Stufen -- ein Grundproblem der Informationstheorie, das bereits in Shannons Rate-Distortion-Theorie \cite{shannon_1959_ratedistortion} formalisiert wurde.
+Quantisierung bezeichnet die Abbildung eines kontinuierlichen Wertebereichs auf eine endliche Menge diskreter Stufen, ein Grundproblem der Informationstheorie, das bereits in Shannons Rate-Distortion-Theorie \cite{shannon_1959_ratedistortion} formalisiert wurde.
 Im Kontext von Embeddings bedeutet dies, dass jede Dimension eines Vektors statt mit 32~Bit (Float32) mit weniger Bits dargestellt wird.
 %
-Der Informationsverlust bei Quantisierung ist unvermeidlich:
+Der Informationsverlust bei Quantisierung ist unvermeidlich.
 Werden $n$ Werte auf $k < n$ Stufen abgebildet, gehen Unterscheidungen verloren.
-Die zentrale Frage ist nicht, \emph{ob} Information verloren geht, sondern \emph{welche} -- und ob die für eine Anwendung relevante Struktur erhalten bleibt.
+Die zentrale Frage ist nicht, \emph{ob} Information verloren geht, sondern \emph{welche} und ob die für eine Anwendung relevante Struktur erhalten bleibt.
 %
 Zwei Eigenschaften bestimmen die Qualität einer Quantisierung:
 \begin{itemize}
-  \item \textbf{Distortion} -- die mittlere Verzerrung der Distanzen zwischen Vektoren. Niedrige Distortion bedeutet, dass die geometrische Struktur des Raums weitgehend erhalten bleibt.
-  \item \textbf{Distanzerhaltung der Rangordnung} -- ob die relative Reihenfolge der Ähnlichkeiten korrekt bleibt. Für Retrieval-Anwendungen ist diese Eigenschaft wichtiger als absolute Distanztreue, da nur das Ranking der Suchergebnisse relevant ist.
+  \item \textbf{Distortion}, also die mittlere Verzerrung der Distanzen zwischen Vektoren. Niedrige Distortion bedeutet, dass die geometrische Struktur des Raums weitgehend erhalten bleibt.
+  \item \textbf{Distanzerhaltung der Rangordnung}, also ob die relative Reihenfolge der Ähnlichkeiten korrekt bleibt. Für Retrieval-Anwendungen ist diese Eigenschaft wichtiger als absolute Distanztreue, da nur das Ranking der Suchergebnisse relevant ist.
 \end{itemize}
 %
 \section{Binäre Embeddings und Hamming-Distanz}
@@ -43,12 +43,12 @@ Die naive Variante nutzt das Vorzeichen:
 positive Werte werden zu~1, negative oder Null zu~0.
 Der resultierende Bitvektor benötigt pro Dimension nur $\frac{1}{32}$ des Speichers eines Float32-Vektors.
 %
-Die Ähnlichkeit zweier binärer Vektoren wird über die Hamming-Distanz bestimmt -- die Anzahl der Bitpositionen, an denen sich die Vektoren unterscheiden.
+Die Ähnlichkeit zweier binärer Vektoren wird über die Hamming-Distanz bestimmt, also die Anzahl der Bitpositionen, an denen sich die Vektoren unterscheiden.
 Diese Operation lässt sich auf moderner Hardware durch XOR und Population-Count in wenigen Taktzyklen berechnen, was Geschwindigkeitsvorteile um Größenordnungen gegenüber Float-Cosine ermöglicht.
 %
-Der Nachteil ist der potenzielle Informationsverlust:
+Der Nachteil ist der potenzielle Informationsverlust.
 Die Binarisierung verwirft sowohl die Magnitude jeder Dimension als auch die Norminformation des Gesamtvektors.
-Ob dieser Verlust für eine gegebene Anwendung tolerierbar ist, hängt davon ab, wie viel semantische Information im Vorzeichen konzentriert ist -- eine Frage, die diese Arbeit empirisch untersucht.
+Ob dieser Verlust für eine gegebene Anwendung tolerierbar ist, hängt davon ab, wie viel semantische Information im Vorzeichen konzentriert ist. Die vorliegende Arbeit untersucht genau diese Frage empirisch.
 %
 \section{TurboQuant}
 %
@@ -59,11 +59,11 @@ TurboQuant \cite{zandieh_2025_turboquant} adressiert das Spannungsfeld zwischen 
   \item \textbf{Skalare Quantisierung:} Jede Dimension des rotierten Vektors wird unabhängig auf wenige Stufen (typischerweise 2~Bit, also 4 Stufen) quantisiert.
 \end{enumerate}
 %
-Der entscheidende Beitrag der Rotation ist folgender:
+Der entscheidende Beitrag der Rotation liegt in der Varianzumverteilung.
 In typischen Embedding-Räumen sind manche Dimensionen informationsreich (hohe Varianz), andere fast konstant (niedrige Varianz).
 Ein uniformer Quantisierer verschwendet Bits auf Dimensionen mit geringer Varianz und hat zu wenige Stufen für Dimensionen mit hoher Varianz.
 Die Rotation verteilt die Varianz gleichmäßig und ermöglicht damit eine effizientere Nutzung der verfügbaren Bits.
-Die Methode benötigt zwar keine Trainingsphase auf den Daten, setzt aber implizit voraus, dass eine gleichmäßige Varianzverteilung über die Dimensionen für die nachfolgende Quantisierung vorteilhaft ist -- eine Annahme, die für typische Embedding-Räume mit stark asymmetrischer Varianzstruktur empirisch gerechtfertigt ist.
+Die Methode benötigt zwar keine Trainingsphase auf den Daten, setzt aber implizit voraus, dass eine gleichmäßige Varianzverteilung über die Dimensionen für die nachfolgende Quantisierung vorteilhaft ist. Diese Annahme ist für typische Embedding-Räume mit stark asymmetrischer Varianzstruktur empirisch gerechtfertigt.
 %
 TurboQuant übertrifft in Nearest-Neighbor-Aufgaben bestehende Product-Quantization-Verfahren \cite{jegou_2011_pq} beim Recall bei gleichzeitig deutlich geringerem Indexierungsaufwand \cite{zandieh_2025_turboquant}.
 Das Open-Source-Projekt turbovec setzt diesen Ansatz als Vektorindex mit Python-Anbindung um \cite{turbovec_2024}.
@@ -78,21 +78,38 @@ Nomic Embed v1.5 \cite{nussbaum_2024_nomic} erweitert diesen Ansatz um eine bin�
 Das Modell wird explizit darauf trainiert, dass auch die Vorzeichen der Dimensionen semantisch aussagekräftig sind.
 Es erzeugt damit Embeddings, die sowohl bei reduzierter Dimensionalität als auch bei Binarisierung leistungsfähig bleiben.
 %
-MRL-basierte Modelle lösen ein anderes Problem als nachträgliche Quantisierung:
+MRL-basierte Modelle lösen ein anderes Problem als nachträgliche Quantisierung.
 Sie optimieren die \emph{Erzeugung} der Vektoren für Kompression, während nachträgliche Verfahren wie TurboQuant auf \emph{beliebige} bestehende Float-Vektoren angewendet werden können.
 Dieser Unterschied ist für die vorliegende Arbeit relevant und wird in der Methodik bei der Modellwahl diskutiert.
-Unabhängig vom Trainingverfahren lässt sich das Prinzip der Dimensionsreduktion jedoch auch nachträglich anwenden:
-Eine PCA-Projektion auf die informationsreichsten Dimensionen ist konzeptionell analog zum Matryoshka-Präfix, operiert aber auf einem nicht-speziell-trainierten Raum und ermöglicht damit die Untersuchung, wie viel Redundanz ein Standard-Embedding-Modell über seine Dimensionen verteilt.
+Unabhängig vom Trainingsverfahren lässt sich das Prinzip der Dimensionsreduktion jedoch auch nachträglich anwenden.
+Eine PCA-Projektion auf die informationsreichsten Dimensionen ist konzeptionell analog zum Matryoshka-Präfix, operiert aber auf einem nicht speziell trainierten Raum und ermöglicht damit die Untersuchung, wie viel Redundanz ein Standard-Embedding-Modell über seine Dimensionen verteilt.
 %
 \section{Intrinsische Dimensionalität}
 %
 Obwohl Embedding-Modelle Vektoren mit einer festen nominalen Dimensionszahl (z.\,B. 768) erzeugen, ist die tatsächliche Anzahl der Freiheitsgrade oft deutlich geringer.
-Die Daten liegen dann auf einer niedrigdimensionalen Mannigfaltigkeit innerhalb des hochdimensionalen Raums -- ähnlich wie eine gekrümmte Fläche in einem dreidimensionalen Raum nur zwei Freiheitsgrade besitzt.
+Die Daten liegen dann auf einer niedrigdimensionalen Mannigfaltigkeit innerhalb des hochdimensionalen Raums, ähnlich wie eine gekrümmte Fläche in einem dreidimensionalen Raum nur zwei Freiheitsgrade besitzt.
 %
 Die intrinsische Dimensionalität quantifiziert diesen Effekt.
-Ist sie deutlich kleiner als die nominale Dimension, enthält der Raum Redundanz:
-Viele Dimensionen tragen keine unabhängige Information bei, sondern sind durch die anderen vorhersagbar.
+Ist sie deutlich kleiner als die nominale Dimension, enthält der Raum Redundanz.
+Viele Dimensionen tragen dann keine unabhängige Information bei, sondern sind durch die anderen vorhersagbar.
 %
-Für die Quantisierung hat dies direkte Konsequenzen:
+Für die Quantisierung hat dies direkte Konsequenzen.
 Redundante Dimensionen können mit geringem Verlust auf wenige Bits reduziert werden, da ihre Information bereits in anderen Dimensionen enthalten ist.
 Ein Raum mit niedriger intrinsischer Dimensionalität ist daher grundsätzlich besser für Quantisierung geeignet als ein Raum, der seine volle nominale Kapazität nutzt.
+%
+\section{Model Context Protocol}
+\label{sec:grundlagen_mcp}
+%
+Das Model Context Protocol (MCP) \cite{anthropic_2024_mcp} ist ein offener Standard, der eine einheitliche Schnittstelle zwischen KI-Agenten und externen Werkzeugen definiert.
+Es formalisiert die Kommunikation zwischen einem Host (typischerweise ein Large Language Model) und Servern, die Datenzugriff, Retrieval oder Berechnungen bereitstellen.
+%
+Die Architektur folgt einem Client-Server-Modell.
+Der Host sendet strukturierte Anfragen über einen MCP-Client an einen oder mehrere MCP-Server, die jeweils spezifische Fähigkeiten anbieten, etwa Dateizugriff, Datenbankabfragen oder semantische Suche.
+Die Kommunikation erfolgt über JSON-RPC, wodurch Server sprachunabhängig implementierbar sind.
+%
+Für die vorliegende Arbeit ist MCP in zweierlei Hinsicht relevant.
+Zum einen erzwingt das Protokoll eine klare Trennung zwischen dem Sprachmodell, das Anfragen formuliert, und dem Retrieval-System, das Ergebnisse liefert.
+Diese Trennung ermöglicht es, verschiedene Retrieval-Backends (Float, binär, quantisiert) hinter derselben Schnittstelle auszutauschen, ohne den Agenten selbst zu modifizieren.
+Zum anderen stellt die agentenbasierte Nutzung implizite Latenzanforderungen an die Werkzeugkommunikation.
+Ein Agent, der bei jeder Nutzerinteraktion mehrere Tool-Aufrufe durchführt, reagiert nur dann flüssig, wenn jeder einzelne Aufruf in niedriger Latenz beantwortet wird.
+Komprimierte Repräsentationen, die schnellere Suchoperationen ermöglichen, haben in diesem Kontext einen direkten praktischen Vorteil.
