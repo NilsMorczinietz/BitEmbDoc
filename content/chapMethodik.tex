@@ -59,6 +59,11 @@ Eine naheliegende Alternative wäre \texttt{nomic-embed-text-v1.5} \cite{nussbau
 Genau diese Optimierung macht es für die vorliegende Untersuchung jedoch weniger geeignet.
 Da das Ziel ist, den Informationsverlust bei nachträglicher Quantisierung zu messen, würde ein bereits auf Kompression trainiertes Modell den Effekt der Quantisierungsverfahren selbst verschleiern.
 Die Ergebnisse wären nicht mehr auf das Kompressionsverfahren, sondern auf die Trainingsoptimierung des Modells zurückführbar.
+Ein Vergleich mit speziell auf Binarisierung trainierten Modellen bleibt weiterführenden Arbeiten vorbehalten.
+%
+Die Beschränkung auf ein einzelnes Modell impliziert, dass die Ergebnisse zunächst modellspezifisch sind.
+Andere Architekturen erzeugen Vektorräume mit abweichender Varianzstruktur und Dimensionskorrelation, sodass Quantisierungseffekte dort quantitativ anders ausfallen können.
+Die qualitative Analyse (welche Raumeigenschaften Quantisierung begünstigen oder erschweren) ist davon weniger betroffen, da sie auf allgemeinen geometrischen Prinzipien beruht.
 %
 \section{Erzeugung der Repräsentationsräume}
 %
@@ -66,7 +71,7 @@ Ausgangspunkt ist der vollständige Float-Raum.
 Für jedes Dokument im Datensatz wird ein Embedding-Vektor $\mathbf{x} \in \mathbb{R}^{768}$ berechnet.
 Die resultierende Matrix $\mathbf{X} \in \mathbb{R}^{N \times 768}$ bildet die Ground Truth, gegen die alle komprimierten Repräsentationen evaluiert werden.
 %
-Aus diesem Float-Raum werden zwei komprimierte Varianten \emph{nachträglich} abgeleitet.
+Aus diesem Float-Raum werden drei komprimierte Varianten \emph{nachträglich} abgeleitet.
 Dieser Ansatz, also die nachträgliche Kompression eines bestehenden Float-Raums, ist eine bewusste methodische Entscheidung gegenüber der Alternative, ein Modell zu verwenden, das direkt binäre oder quantisierte Ausgaben erzeugt (etwa durch Matryoshka-Training oder spezialisierte Binary-Embedding-Modelle).
 Die nachträgliche Kompression ist für die Forschungsfrage aus drei Gründen notwendig:
 \begin{enumerate}
@@ -75,8 +80,8 @@ Die nachträgliche Kompression ist für die Forschungsfrage aus drei Gründen no
   \item Sie bildet das praxisrelevante Szenario ab, in dem bestehende Float-Embeddings nachträglich komprimiert werden sollen, ohne das zugrunde liegende Modell austauschen zu müssen.
 \end{enumerate}
 %
-Die Wahl genau zweier komprimierter Varianten ist nicht willkürlich, sondern bildet die beiden Endpunkte eines Kompression-Qualität-Spektrums ab.
-Die eine Variante steht für maximale Kompression bei minimaler Methodik (naive Binarisierung), die andere für moderate Kompression bei informierter Methodik (TurboQuant).
+Die Wahl der komprimierten Varianten bildet verschiedene Punkte eines Kompression-Qualität-Spektrums ab.
+Die naive Binarisierung steht für maximale Kompression bei minimaler Methodik, TurboQuant 2-Bit für starke Kompression mit informierter Vorverarbeitung, und TurboQuant 4-Bit für moderate Kompression bei hoher erwarteter Qualitätserhaltung.
 %
 \subsection{Binäre Repräsentation}
 %
@@ -95,8 +100,17 @@ Falls die naive Binarisierung bereits gute Ergebnisse liefert, deutet dies darau
 %
 \subsection{TurboQuant-Repräsentation}
 %
-Die zweite Variante nutzt das TurboQuant-Verfahren \cite{zandieh_2025_turboquant}, das eine datenunabhängige Rotation mit anschließender skalarer Quantisierung auf 2~Bit pro Dimension kombiniert.
-Der Kompressionsfaktor beträgt 16 gegenüber Float32.
+Die zweite und dritte Variante nutzen das TurboQuant-Verfahren \cite{zandieh_2025_turboquant}, das eine datenunabhängige Rotation mit anschließender skalarer Quantisierung kombiniert.
+Das Verfahren wird in zwei Bitstiefen evaluiert:
+\begin{itemize}
+  \item \textbf{TurboQuant 2-Bit} (4 Quantisierungsstufen pro Dimension, Kompressionsfaktor 16).
+  \item \textbf{TurboQuant 4-Bit} (16 Quantisierungsstufen pro Dimension, Kompressionsfaktor 8).
+\end{itemize}
+%
+Die 4-Bit-Variante schließt eine Lücke im Kompression-Qualität-Spektrum zwischen Float32 und 2-Bit.
+Sie ermöglicht die Unterscheidung, ob beobachtete Qualitätsverluste primär durch die geringe Stufenzahl oder durch die Bitreduktion an sich entstehen.
+Zeigt die 4-Bit-Variante nur marginale Verbesserung gegenüber 2-Bit, liegt der Qualitätsverlust vor allem in der Rotation und nicht in der Auflösung.
+Zeigt sie hingegen deutlich bessere Ergebnisse, ist die Stufenzahl der dominierende Faktor.
 %
 TurboQuant ist aus mehreren Gründen als Vergleichsmethode geeignet:
 \begin{itemize}
@@ -105,8 +119,8 @@ TurboQuant ist aus mehreren Gründen als Vergleichsmethode geeignet:
   \item Der Kompressionsfaktor liegt zwischen Float und Binär, was eine Einordnung entlang des Kompression-Qualität-Spektrums ermöglicht.
 \end{itemize}
 %
-Der methodische Mehrwert des Vergleichs liegt darin, dass sich zwei Effekte trennen lassen.
-Der Effekt der Bitreduktion selbst wird am Unterschied zwischen Float und TurboQuant sichtbar, der Effekt fehlender Vorverarbeitung am Unterschied zwischen TurboQuant und naiver Binarisierung.
+Der methodische Mehrwert des Vergleichs liegt darin, dass sich mehrere Effekte trennen lassen.
+Der Effekt der Bitreduktion wird am Unterschied zwischen Float und TurboQuant 4-Bit sichtbar, der Effekt extremer Kompression am Unterschied zwischen 4-Bit und 2-Bit, und der Effekt fehlender Vorverarbeitung am Unterschied zwischen TurboQuant 2-Bit und naiver Binarisierung.
 %
 \subsection{Dimensionsreduktion als zusätzlicher Kompressionsparameter}
 \label{sec:methodik_dimreduktion}
@@ -121,7 +135,7 @@ Evaluiert werden die Präfixlängen $d \in \{64, 128, 256, 384, 768\}$.
 %
 Daraus ergibt sich eine zweidimensionale Versuchsmatrix:
 \begin{itemize}
-  \item Bittiefe: Float32, 2~Bit (TurboQuant), 1~Bit (binär)
+  \item Bittiefe: Float32, 4~Bit (TurboQuant), 2~Bit (TurboQuant), 1~Bit (binär)
   \item Dimensionszahl: 64, 128, 256, 384, 768
 \end{itemize}
 %
@@ -189,7 +203,7 @@ Diese Phase beantwortet die Kernfrage, ob die geometrischen Beziehungen zwischen
 \subsection{Paarweise Distanzkorrelation}
 %
 Aus dem Dokumentenkorpus werden 10\,000 Paare gleichverteilt zufällig gezogen.
-Für jedes Paar werden drei Distanzwerte berechnet, nämlich die Cosine-Similarity im Float-Raum, die Hamming-Distanz im binären Raum und die entsprechende Distanz im TurboQuant-Raum.
+Für jedes Paar werden vier Distanzwerte berechnet, nämlich die Cosine-Similarity im Float-Raum, die jeweilige Distanz in den beiden TurboQuant-Räumen und die Hamming-Distanz im binären Raum.
 %
 Die Stichprobengröße von 10\,000 Paaren ist so gewählt, dass das 95\%-Konfidenzintervall für den Pearson-Korrelationskoeffizienten bei $r = 0{,}9$ eine Breite von weniger als $\pm 0{,}005$ besitzt.
 Damit sind selbst kleine Unterschiede zwischen den Verfahren statistisch auflösbar.
@@ -278,16 +292,19 @@ Phase~4 prüft, ob sich diese geometrischen Beobachtungen in tatsächlicher Such
 %
 \subsection{Retrieval-Protokoll}
 %
-Für jede Query im BEIR-Testset wird eine Suche in allen drei Repräsentationsräumen durchgeführt:
+Für jede Query im BEIR-Testset wird eine Suche in allen vier Repräsentationsräumen durchgeführt:
 \begin{itemize}
   \item Float-Raum: Ranking nach Cosine-Similarity.
+  \item TurboQuant 4-Bit: Ranking nach der entsprechenden Distanzfunktion.
+  \item TurboQuant 2-Bit: Ranking nach der entsprechenden Distanzfunktion.
   \item Binärer Raum: Ranking nach Hamming-Distanz.
-  \item TurboQuant-Raum: Ranking nach der entsprechenden Distanzfunktion.
 \end{itemize}
 %
 Die Suche erfolgt exakt (Brute-Force), nicht approximativ.
 Der Grund ist, dass approximative Verfahren (z.\,B. HNSW) eigene Fehler einführen, die den Quantisierungseffekt überlagern würden.
 Das Experiment soll ausschließlich den Effekt der Kompression isolieren, nicht den einer approximativen Suche.
+Die Konsequenz dieser Entscheidung ist, dass die gemessenen Latenzen nicht direkt auf Produktivsysteme übertragbar sind, in denen bei größeren Korpora approximative Indizes (z.\,B. HNSW) unvermeidbar werden.
+Die Interaktion zwischen Quantisierung und approximativer Indexierung bleibt eine offene Frage, die über den Rahmen dieser Arbeit hinausgeht.
 %
 \subsection{Metriken}
 %
@@ -303,11 +320,11 @@ Die Retrieval-Qualität wird über vier Standardmetriken bewertet:
 Retrieval-Metriken variieren stark zwischen Queries.
 Ein Unterschied in der mittleren NDCG@10 zwischen zwei Verfahren ist nur dann aussagekräftig, wenn er nicht durch zufällige Query-Schwankungen erklärbar ist.
 %
-Für jeden paarweisen Vergleich (Float vs. Binär, Float vs. TurboQuant, Binär vs. TurboQuant) wird daher ein Wilcoxon-Signed-Rank-Test auf den per-Query-Metriken durchgeführt.
+Für jeden paarweisen Vergleich wird daher ein Wilcoxon-Signed-Rank-Test auf den per-Query-Metriken durchgeführt.
 Die Wahl fällt auf Wilcoxon statt eines gepaarten t-Tests, weil Retrieval-Metriken typischerweise nicht normalverteilt sind und Wilcoxon keine Verteilungsannahme erfordert.
 %
 Das Signifikanzniveau wird auf $\alpha = 0{,}05$ festgelegt.
-Bei drei paarweisen Vergleichen pro Metrik wird eine Bonferroni-Korrektur angewandt ($\alpha_\text{korr} = 0{,}017$), um das multiple Testproblem zu berücksichtigen.
+Bei sechs paarweisen Vergleichen pro Metrik wird eine Bonferroni-Korrektur angewandt ($\alpha_\text{korr} = 0{,}008$), um das multiple Testproblem zu berücksichtigen.
 %
 \section{Phase~5: Praktische Evaluation}
 \label{sec:methodik_phase5}
@@ -320,8 +337,9 @@ Phase~5 ergänzt die Perspektive der praktischen Anwendbarkeit.
 Für jede Repräsentation wird der theoretische Speicherbedarf pro Vektor berechnet:
 \begin{itemize}
   \item Float32: $768 \times 32 = 24\,576$ Bit $= 3\,072$ Byte
+  \item TurboQuant 4-Bit: $768 \times 4 = 3\,072$ Bit $= 384$ Byte
+  \item TurboQuant 2-Bit: $768 \times 2 = 1\,536$ Bit $= 192$ Byte
   \item Binär: $768 \times 1 = 768$ Bit $= 96$ Byte
-  \item TurboQuant: $768 \times 2 = 1\,536$ Bit $= 192$ Byte
 \end{itemize}
 %
 Zusätzlich wird der tatsächliche Speicherverbrauch des gesamten Index gemessen, da Overhead durch Metadaten, Alignment oder Indexstrukturen den theoretischen Wert übersteigen kann.
@@ -338,6 +356,9 @@ Gemessen werden:
 %
 Die Messung erfolgt auf den drei BEIR-Subsets, die unterschiedliche Korpusgrößen abdecken (SciFact: $\sim$5\,000, FiQA: $\sim$57\,000, TREC-COVID: $\sim$171\,000 Dokumente).
 Damit ergibt sich ein natürliches Skalierungsspektrum, ohne synthetische Daten erzeugen zu müssen.
+Die Korpusgrößen liegen allerdings unterhalb der Schwelle, ab der Speicher- und Latenzvorteile komprimierter Repräsentationen ihre volle Wirkung entfalten.
+Bei Korpora im Millionenbereich wächst der praktische Nutzen überproportional, da der gesamte Index nicht mehr in den CPU-Cache passt und Speicherbandbreite zum Engpass wird.
+Die vorliegenden Messungen sind daher als konservative untere Abschätzung des Effizienzgewinns zu interpretieren.
 %
 \section{Phase~6: Anwendungsvalidierung über MCP-Server}
 \label{sec:methodik_phase6}
@@ -347,7 +368,7 @@ Diese Kontrolle ist für die wissenschaftliche Aussagekraft notwendig, schließt
 Es bleibt offen, ob sich die gemessene Retrieval-Qualität auf ein reales Anwendungsszenario überträgt, in dem zusätzliche Faktoren wie Netzwerklatenz, Serialisierung und agentengesteuerte Query-Formulierung hinzukommen.
 %
 Phase~6 adressiert diese Frage durch eine Anwendungsvalidierung.
-Die in den vorherigen Phasen untersuchten Retrieval-Backends (Float, binär, TurboQuant) werden als MCP-Server implementiert und von einem LLM-Agenten über das Model Context Protocol (vgl. Kapitel~\ref{sec:grundlagen_mcp}) als Retrieval-Werkzeug genutzt.
+Die in den vorherigen Phasen untersuchten Retrieval-Backends (Float, TurboQuant 4-Bit, TurboQuant 2-Bit, binär) werden als MCP-Server implementiert und von einem LLM-Agenten über das Model Context Protocol (vgl. Kapitel~\ref{sec:grundlagen_mcp}) als Retrieval-Werkzeug genutzt.
 %
 \subsection{Ziel und Abgrenzung}
 %
@@ -367,18 +388,18 @@ Phase~6 evaluiert nicht den MCP-Server als Software-Artefakt (Architektur, Skali
 %
 Die Implementierung folgt dem minimalen Aufbau, der notwendig ist, um die Validierungsfrage zu beantworten:
 \begin{itemize}
-  \item Drei identische MCP-Server, die sich ausschließlich im Retrieval-Backend unterscheiden (Float/Cosine, Binär/Hamming, TurboQuant).
+  \item Vier identische MCP-Server, die sich ausschließlich im Retrieval-Backend unterscheiden (Float/Cosine, TurboQuant 4-Bit, TurboQuant 2-Bit, Binär/Hamming).
   \item Jeder Server exponiert ein einzelnes Tool \texttt{search}, das eine natürlichsprachliche Query entgegennimmt und die Top-$k$ Dokumente mit Relevanzscores zurückgibt.
   \item Ein LLM-Agent, der über den MCP-Client auf das jeweilige Retrieval-Tool zugreift und auf Basis der zurückgegebenen Dokumente eine Antwort generiert.
 \end{itemize}
 %
 Durch die identische Schnittstelle ist sichergestellt, dass Unterschiede im Agentenverhalten ausschließlich auf das Retrieval-Backend zurückführbar sind.
-Der Agent, das Prompt-Template und die Dokumentenbasis bleiben über alle drei Varianten konstant.
+Der Agent, das Prompt-Template und die Dokumentenbasis bleiben über alle vier Varianten konstant.
 %
 \subsection{Evaluationsprotokoll}
 %
 Die Evaluation verwendet eine Teilmenge der BEIR-Queries, für die in Phase~4 bereits Retrieval-Metriken vorliegen.
-Für jede Query wird der Agent mit jedem der drei Backends ausgeführt.
+Für jede Query wird der Agent mit jedem der vier Backends ausgeführt.
 Gemessen werden:
 \begin{itemize}
   \item \textbf{End-to-End-Latenz:} Die Zeit vom Absenden der Nutzeranfrage bis zur vollständigen Agentenantwort, aufgeschlüsselt in Retrieval-Latenz (Tool-Call) und Generierungslatenz.
@@ -391,6 +412,8 @@ Gemessen werden:
 Aus den Ergebnissen der Phasen~4 und~5 lassen sich Erwartungen ableiten.
 Die Retrieval-Übereinstimmung sollte nahe 1{,}0 liegen, da der MCP-Server lediglich eine Schnittstelle um dieselbe Suchlogik legt.
 Abweichungen würden auf Implementierungsfehler oder unerwartete Effekte der Query-Transformation durch den Agenten hindeuten.
+Letzteres ist der methodisch interessanteste Fall: Der Agent formuliert Queries nicht notwendigerweise identisch zur BEIR-Vorlage, sondern kann sie umformulieren, verkürzen oder erweitern.
+Falls solche Reformulierungen die Qualitätsunterschiede zwischen den Backends verstärken oder abschwächen, liefert dies Erkenntnisse darüber, wie robust die Quantisierung gegenüber Query-Variabilität ist.
 Die Latenzdifferenz zwischen Float und Binär sollte sich bei den verwendeten Korpusgrößen (5\,000 bis 171\,000 Dokumente) im einstelligen Millisekundenbereich bewegen.
 Ob dieser Unterschied im Kontext der deutlich höheren LLM-Generierungslatenz praktisch relevant ist, wird quantifiziert.
 Falls das binäre Backend bei bestimmten Queries schlechtere Dokumente liefert (gemäß Phase~4), sollte sich dies in der Antwortqualität niederschlagen.
