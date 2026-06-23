@@ -1,16 +1,18 @@
 \chapter{Einleitung}
 %
 Embedding-basierte Suchsysteme sind ein zentraler Baustein moderner KI-Anwendungen.
-Sie werden unter anderem für semantische Suche, Retrieval-Augmented Generation und Ähnlichkeitssuche eingesetzt.
+Sie werden unter anderem für semantische Suche, Retrieval-Augmented Generation (RAG) und Ähnlichkeitssuche eingesetzt.
 In solchen Systemen werden Texte, Dokumente oder andere Datenobjekte als hochdimensionale Vektoren repräsentiert, deren Speicherung und Vergleich bei großen Datenmengen erhebliche Rechen- und Speicherressourcen erfordern.
 Gleichzeitig wächst der praktische Bedarf an Systemen, die auch auf begrenzter Hardware schnell, speichereffizient und möglichst präzise arbeiten.
+Besonders deutlich wird diese Anforderung im Kontext agentenbasierter KI-Systeme, die über standardisierte Protokolle wie das Model Context Protocol (MCP) \cite{anthropic_2024_mcp} auf externe Werkzeuge zugreifen und dabei Echtzeit-Retrieval unter strikten Latenzanforderungen benötigen.
 \par
 Die vorliegende Projektarbeit untersucht daher die Frage, wie sich Embeddings verändern, wenn anstelle klassischer Float-Vektoren stark komprimierte Bit- beziehungsweise Niedrigbit-Repräsentationen verwendet werden.
-Aktuelle Entwicklungen zeigen, dass diese Richtung nicht nur theoretisch interessant ist, sondern auch praktisch relevant:
+Aktuelle Entwicklungen zeigen, dass diese Richtung nicht nur theoretisch interessant ist, sondern auch praktisch relevant.
 Google Research beschreibt mit TurboQuant eine Methode, die Vektoren mittels Rotation und skalaren Quantisierern auf wenige Bits pro Dimension komprimiert und dabei sowohl Distortion als auch Retrieval-Qualität günstig beeinflussen soll \cite{zandieh_2025_turboquant}; das Open-Source-Projekt turbovec setzt diesen Ansatz als Vektorindex mit Python-Anbindung um \cite{turbovec_2024}.
 Parallel dazu zeigen Matryoshka-Embeddings, dass Modelle so trainiert werden können, dass auch reduzierte Embedding-Dimensionen noch leistungsfähig bleiben \cite{kusupati_2022_matryoshka}.
 \par
 Aus dieser Ausgangslage ergibt sich die zentrale Forschungsfrage der Arbeit:
 Welche semantischen Eigenschaften eines Float-Embedding-Raums bleiben unter Quantisierung erhalten, welche gehen verloren, und wie wirkt sich dieser Verlust auf die Retrieval-Qualität aus?
 Der Fokus liegt damit nicht auf einer bloßen Implementierung eines weiteren Suchsystems, sondern auf dem wissenschaftlichen Verständnis, \emph{warum} bestimmte Kompressionsverfahren auf bestimmten Daten besser oder schlechter funktionieren und welche praktischen Konsequenzen sich daraus ergeben.
-Die Arbeit entwickelt dabei keine neuen Quantisierungsverfahren und trainiert keine spezialisierten Embedding-Modelle, sondern analysiert den Informationsverlust bestehender Methoden auf einem kontrollierten Float-Referenzraum.
+Um die gewonnenen Erkenntnisse über einen isolierten Benchmark hinaus zu validieren, werden die untersuchten Retrieval-Systeme zusätzlich als MCP-Server bereitgestellt und in einem realistischen Anwendungsszenario evaluiert.
+Die Arbeit entwickelt dabei keine neuen Quantisierungsverfahren und trainiert keine spezialisierten Embedding-Modelle, sondern analysiert den Informationsverlust bestehender Methoden auf einem kontrollierten Float-Referenzraum und prüft deren praktische Einsetzbarkeit in einer agentenbasierten Architektur.
