@@ -80,6 +80,8 @@ Es erzeugt damit Embeddings, die sowohl bei reduzierter Dimensionalität als auc
 MRL-basierte Modelle lösen ein anderes Problem als nachträgliche Quantisierung:
 Sie optimieren die \emph{Erzeugung} der Vektoren für Kompression, während nachträgliche Verfahren wie TurboQuant auf \emph{beliebige} bestehende Float-Vektoren angewendet werden können.
 Dieser Unterschied ist für die vorliegende Arbeit relevant und wird in der Methodik bei der Modellwahl diskutiert.
+Unabhängig vom Trainingverfahren lässt sich das Prinzip der Dimensionsreduktion jedoch auch nachträglich anwenden:
+Eine PCA-Projektion auf die informationsreichsten Dimensionen ist konzeptionell analog zum Matryoshka-Präfix, operiert aber auf einem nicht-speziell-trainierten Raum und ermöglicht damit die Untersuchung, wie viel Redundanz ein Standard-Embedding-Modell über seine Dimensionen verteilt.
 %
 \section{Intrinsische Dimensionalität}
 %
