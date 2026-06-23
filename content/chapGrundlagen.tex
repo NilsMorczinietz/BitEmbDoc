@@ -23,7 +23,7 @@ Bei Brute-Force-Suche skaliert die Suchzeit linear mit der Korpusgröße, was f�
 %
 \section{Quantisierung}
 %
-Quantisierung bezeichnet die Abbildung eines kontinuierlichen Wertebereichs auf eine endliche Menge diskreter Stufen.
+Quantisierung bezeichnet die Abbildung eines kontinuierlichen Wertebereichs auf eine endliche Menge diskreter Stufen -- ein Grundproblem der Informationstheorie, das bereits in Shannons Rate-Distortion-Theorie \cite{shannon_1959_ratedistortion} formalisiert wurde.
 Im Kontext von Embeddings bedeutet dies, dass jede Dimension eines Vektors statt mit 32~Bit (Float32) mit weniger Bits dargestellt wird.
 %
 Der Informationsverlust bei Quantisierung ist unvermeidlich:
@@ -52,7 +52,7 @@ Ob dieser Verlust für eine gegebene Anwendung tolerierbar ist, hängt davon ab,
 %
 \section{TurboQuant}
 %
-TurboQuant \cite{zandieh_2025_turboquant} adressiert das Spannungsfeld zwischen Kompaktheit und Genauigkeit über eine datenunabhängige Quantisierung in zwei Schritten:
+TurboQuant \cite{zandieh_2025_turboquant} adressiert das Spannungsfeld zwischen Kompaktheit und Genauigkeit über eine Quantisierung in zwei Schritten, die keine Trainingsphase auf den Zieldaten erfordert:
 %
 \begin{enumerate}
   \item \textbf{Rotation:} Die Eingabevektoren werden mit einer zufälligen orthogonalen Matrix multipliziert. Diese Rotation verändert die semantische Information nicht (Winkel und Abstände bleiben identisch), dekorreliert aber die Dimensionen. Nach der Rotation sind die Werte gleichmäßiger über die Dimensionen verteilt, sodass ein uniformer Quantisierer jede Dimension gleich effizient nutzen kann.
@@ -62,9 +62,10 @@ TurboQuant \cite{zandieh_2025_turboquant} adressiert das Spannungsfeld zwischen 
 Der entscheidende Beitrag der Rotation ist folgender:
 In typischen Embedding-Räumen sind manche Dimensionen informationsreich (hohe Varianz), andere fast konstant (niedrige Varianz).
 Ein uniformer Quantisierer verschwendet Bits auf Dimensionen mit geringer Varianz und hat zu wenige Stufen für Dimensionen mit hoher Varianz.
-Die Rotation verteilt die Varianz gleichmäßig und ermöglicht damit eine effizientere Nutzung der verfügbaren Bits, ohne die Datenverteilung kennen zu müssen.
+Die Rotation verteilt die Varianz gleichmäßig und ermöglicht damit eine effizientere Nutzung der verfügbaren Bits.
+Die Methode benötigt zwar keine Trainingsphase auf den Daten, setzt aber implizit voraus, dass eine gleichmäßige Varianzverteilung über die Dimensionen für die nachfolgende Quantisierung vorteilhaft ist -- eine Annahme, die für typische Embedding-Räume mit stark asymmetrischer Varianzstruktur empirisch gerechtfertigt ist.
 %
-TurboQuant übertrifft in Nearest-Neighbor-Aufgaben bestehende Product-Quantization-Verfahren beim Recall bei gleichzeitig deutlich geringerem Indexierungsaufwand \cite{zandieh_2025_turboquant}.
+TurboQuant übertrifft in Nearest-Neighbor-Aufgaben bestehende Product-Quantization-Verfahren \cite{jegou_2011_pq} beim Recall bei gleichzeitig deutlich geringerem Indexierungsaufwand \cite{zandieh_2025_turboquant}.
 Das Open-Source-Projekt turbovec setzt diesen Ansatz als Vektorindex mit Python-Anbindung um \cite{turbovec_2024}.
 %
 \section{Matryoshka Representation Learning}

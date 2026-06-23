@@ -132,7 +132,8 @@ Der Gesamtspeicherbedarf einer Kombination beträgt $d \times b$ Bit pro Vektor,
 Damit reicht das Spektrum von $768 \times 32 = 24\,576$~Bit (Float, volle Dimension) bis $64 \times 1 = 64$~Bit (binär, minimale Dimension) -- ein Kompressionsfaktor von bis zu 384.
 %
 Die Wahl von PCA als Reduktionsverfahren ist methodisch konsistent mit dem Gesamtansatz der Arbeit:
-Sie ist datenunabhängig im Sinne, dass keine aufgabenspezifische Optimierung stattfindet, und sie ist orthogonal zur anschließenden Quantisierung, sodass beide Effekte weiterhin separierbar bleiben.
+Sie ist aufgabenunabhängig im Sinne, dass keine überwachte oder aufgabenspezifische Optimierung stattfindet -- die Hauptkomponenten werden zwar aus den Daten geschätzt, aber ohne Kenntnis der Retrieval-Aufgabe oder Relevanzurteile.
+Zudem ist sie orthogonal zur anschließenden Quantisierung, sodass beide Effekte weiterhin separierbar bleiben.
 Zudem liefert die in Phase~1 ohnehin durchgeführte PCA-Analyse der erklärten Varianz direkt eine Erwartung darüber, ab welcher Präfixlänge substantielle Information verloren geht.
 %
 \section{Phase~1: Charakterisierung des Float-Raums}
@@ -246,6 +247,9 @@ Der Overlap ist der Anteil der Nachbarn, die in beiden Mengen enthalten sind:
 Dieser Wert wird über alle Dokumente gemittelt und als Funktion von $k$ (für $k \in \{10, 50, 100\}$) berichtet.
 Die Variation von $k$ ist wichtig, weil Retrieval-Systeme typischerweise nur die Top-10 oder Top-100 verwenden -- der Overlap bei $k = 10$ ist für die Praxis relevanter als bei $k = 100$, aber statistisch instabiler.
 %
+Als Referenzwert dient der erwartete Overlap bei zufälligem Ranking: $\mathbb{E}[\text{Overlap}] = k / N$, wobei $N$ die Korpusgröße ist.
+Für die verwendeten Datensätze liegt dieser Zufalls-Overlap unter 0{,}02, sodass bereits moderate Overlap-Werte eine deutliche Strukturerhaltung anzeigen.
+%
 \subsection{Trustworthiness}
 %
 Neighborhood Overlap ist symmetrisch und unterscheidet nicht zwischen zwei verschiedenen Fehlertypen.
@@ -266,7 +270,8 @@ Ein Wert von $T = 1$ bedeutet, dass keine falschen Nachbarn eingeführt werden.
 Die Wahl, Trustworthiness statt des Gegenstücks Continuity zu verwenden, ist bewusst:
 Continuity misst, ob echte Nachbarn verloren gehen.
 Für die Forschungsfrage ist aber Trustworthiness aussagekräftiger, weil sie direkt die Precision der Nachbarschaft quantifiziert -- und Precision ist im Retrieval-Kontext die nutzerrelevante Größe.
-Continuity wird nicht separat berichtet, da sie über den Neighborhood Overlap bereits implizit erfasst wird.
+Continuity wird nicht separat berichtet, da sie eine konzeptionell andere Fehlerperspektive einnimmt (fehlende Nachbarn statt falsche Nachbarn):
+Für ein Retrieval-System ist es gravierender, irrelevante Dokumente anzuzeigen (niedriges Trustworthiness), als einzelne relevante Dokumente zu übersehen (niedrige Continuity), solange genügend relevante Treffer verbleiben -- was der Recall in Phase~4 direkt überprüft.
 %
 \section{Phase~4: Retrieval-Evaluation}
 \label{sec:methodik_phase4}
