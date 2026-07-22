@@ -5,7 +5,7 @@
 %
 Embeddings dienen dazu, semantische Information in einen numerischen Vektorraum zu überführen.
 Ob zwei Objekte ähnlich sind, wird nicht über exakte Zeichenfolgen oder Regeln bestimmt, sondern über die geometrische Nähe ihrer Vektoren.
-In der Praxis werden dafür meist Float-Vektoren verwendet, typischerweise in 384, 768 oder 1536 Dimensionen.
+In der Praxis werden dafür meist Float-Vektoren verwendet, typischerweise in 384, 768, 1024 oder 1536 Dimensionen.
 %
 Das gebräuchlichste Ähnlichkeitsmaß für Embedding-Vektoren ist die Cosine-Similarity:
 \begin{equation}
@@ -17,8 +17,8 @@ Werte nahe~1 bedeuten hohe semantische Ähnlichkeit, Werte nahe~0 Unabhängigkei
 Für normierte Vektoren ($\|\mathbf{x}\|_2 = 1$) vereinfacht sich die Cosine-Similarity zum Skalarprodukt, was die Berechnung beschleunigt.
 %
 Float-Repräsentationen sind flexibel und präzise, verursachen aber bei großen Korpora erhebliche Speicher- und Suchkosten.
-Ein Korpus von 10 Millionen Dokumenten benötigt als Float32-Vektoren mit 768 Dimensionen rund 31~GB RAM.
-Jede Ähnlichkeitsberechnung erfordert 768 Multiplikationen und Additionen.
+Ein Korpus von 10 Millionen Dokumenten benötigt als Float32-Vektoren mit 1024 Dimensionen rund 41~GB RAM.
+Jede Ähnlichkeitsberechnung erfordert 1024 Multiplikationen und Additionen.
 Bei Brute-Force-Suche skaliert die Suchzeit linear mit der Korpusgröße, was für Echtzeit-Anwendungen schnell unpraktikabel wird.
 %
 \section{Quantisierung}
@@ -32,8 +32,10 @@ Die zentrale Frage ist nicht, \emph{ob} Information verloren geht, sondern \emph
 %
 Zwei Eigenschaften bestimmen die Qualität einer Quantisierung:
 \begin{itemize}
-  \item \textbf{Distortion}, also die mittlere Verzerrung der Distanzen zwischen Vektoren. Niedrige Distortion bedeutet, dass die geometrische Struktur des Raums weitgehend erhalten bleibt.
-  \item \textbf{Distanzerhaltung der Rangordnung}, also ob die relative Reihenfolge der Ähnlichkeiten korrekt bleibt. Für Retrieval-Anwendungen ist diese Eigenschaft wichtiger als absolute Distanztreue, da nur das Ranking der Suchergebnisse relevant ist.
+  \item \textbf{Distortion}, also die mittlere Verzerrung der Distanzen zwischen Vektoren.
+Niedrige Distortion bedeutet, dass die geometrische Struktur des Raums weitgehend erhalten bleibt.
+  \item \textbf{Distanzerhaltung der Rangordnung}, also ob die relative Reihenfolge der Ähnlichkeiten korrekt bleibt.
+Für Retrieval-Anwendungen ist diese Eigenschaft wichtiger als absolute Distanztreue, da nur das Ranking der Suchergebnisse relevant ist.
 \end{itemize}
 %
 \section{Binäre Embeddings und Hamming-Distanz}
@@ -48,14 +50,17 @@ Diese Operation lässt sich auf moderner Hardware durch XOR und Population-Count
 %
 Der Nachteil ist der potenzielle Informationsverlust.
 Die Binarisierung verwirft sowohl die Magnitude jeder Dimension als auch die Norminformation des Gesamtvektors.
-Ob dieser Verlust für eine gegebene Anwendung tolerierbar ist, hängt davon ab, wie viel semantische Information im Vorzeichen konzentriert ist. Die vorliegende Arbeit untersucht genau diese Frage empirisch.
+Ob dieser Verlust für eine gegebene Anwendung tolerierbar ist, hängt davon ab, wie viel semantische Information im Vorzeichen konzentriert ist.
+Die vorliegende Arbeit untersucht genau diese Frage empirisch.
 %
 \section{TurboQuant}
 %
 TurboQuant \cite{zandieh_2025_turboquant} adressiert das Spannungsfeld zwischen Kompaktheit und Genauigkeit über eine Quantisierung in zwei Schritten, die keine Trainingsphase auf den Zieldaten erfordert:
 %
 \begin{enumerate}
-  \item \textbf{Rotation:} Die Eingabevektoren werden mit einer zufälligen orthogonalen Matrix multipliziert. Diese Rotation verändert die semantische Information nicht (Winkel und Abstände bleiben identisch), dekorreliert aber die Dimensionen. Nach der Rotation sind die Werte gleichmäßiger über die Dimensionen verteilt, sodass ein uniformer Quantisierer jede Dimension gleich effizient nutzen kann.
+  \item \textbf{Rotation:} Die Eingabevektoren werden mit einer zufälligen orthogonalen Matrix multipliziert.
+Diese Rotation verändert die semantische Information nicht (Winkel und Abstände bleiben identisch), dekorreliert aber die Dimensionen.
+Nach der Rotation sind die Werte gleichmäßiger über die Dimensionen verteilt, sodass ein uniformer Quantisierer jede Dimension gleich effizient nutzen kann.
   \item \textbf{Skalare Quantisierung:} Jede Dimension des rotierten Vektors wird unabhängig auf wenige Stufen (typischerweise 2~Bit, also 4 Stufen) quantisiert.
 \end{enumerate}
 %
@@ -63,7 +68,8 @@ Der entscheidende Beitrag der Rotation liegt in der Varianzumverteilung.
 In typischen Embedding-Räumen sind manche Dimensionen informationsreich (hohe Varianz), andere fast konstant (niedrige Varianz).
 Ein uniformer Quantisierer verschwendet Bits auf Dimensionen mit geringer Varianz und hat zu wenige Stufen für Dimensionen mit hoher Varianz.
 Die Rotation verteilt die Varianz gleichmäßig und ermöglicht damit eine effizientere Nutzung der verfügbaren Bits.
-Die Methode benötigt zwar keine Trainingsphase auf den Daten, setzt aber implizit voraus, dass eine gleichmäßige Varianzverteilung über die Dimensionen für die nachfolgende Quantisierung vorteilhaft ist. Diese Annahme ist für typische Embedding-Räume mit stark asymmetrischer Varianzstruktur empirisch gerechtfertigt.
+Die Methode benötigt zwar keine Trainingsphase auf den Daten, setzt aber implizit voraus, dass eine gleichmäßige Varianzverteilung über die Dimensionen für die nachfolgende Quantisierung vorteilhaft ist.
+Diese Annahme ist für typische Embedding-Räume mit stark asymmetrischer Varianzstruktur empirisch gerechtfertigt.
 %
 TurboQuant übertrifft in Nearest-Neighbor-Aufgaben bestehende Product-Quantization-Verfahren \cite{jegou_2011_pq} beim Recall bei gleichzeitig deutlich geringerem Indexierungsaufwand \cite{zandieh_2025_turboquant}.
 Das Open-Source-Projekt turbovec setzt diesen Ansatz als Vektorindex mit Python-Anbindung um \cite{turbovec_2024}.
@@ -88,7 +94,7 @@ Die Reduktion operiert damit auf einem nicht speziell trainierten Raum und ermö
 %
 \section{Intrinsische Dimensionalität}
 %
-Obwohl Embedding-Modelle Vektoren mit einer festen nominalen Dimensionszahl (z.\,B. 768) erzeugen, ist die tatsächliche Anzahl der Freiheitsgrade oft deutlich geringer.
+Obwohl Embedding-Modelle Vektoren mit einer festen nominalen Dimensionszahl (z.\,B. 1024) erzeugen, ist die tatsächliche Anzahl der Freiheitsgrade oft deutlich geringer.
 Die Daten liegen dann auf einer niedrigdimensionalen Mannigfaltigkeit innerhalb des hochdimensionalen Raums, ähnlich wie eine gekrümmte Fläche in einem dreidimensionalen Raum nur zwei Freiheitsgrade besitzt.
 %
 Die intrinsische Dimensionalität quantifiziert diesen Effekt.
