@@ -57,7 +57,8 @@ Konkret werden folgende Teilfragen adressiert:
 %
 Zur Beantwortung dieser Fragen wird ein kontrolliertes Experiment in sechs aufeinander aufbauenden Phasen durchgeführt.
 Den Ausgangspunkt bildet ein Float32-Referenzraum, der mit dem Modell \texttt{bge-large-en-v1.5} \cite{xiao_2023_bge} auf drei heterogenen BEIR-Datensätzen \cite{thakur_2021_beir} erzeugt wird.
-Dieser Referenzraum wird nachträglich mit verschiedenen Verfahren komprimiert: naive Binarisierung (1~Bit), TurboQuant mit Rotation (2~Bit und 4~Bit) sowie PCA-basierte Dimensionsreduktion.
+Dieser Referenzraum wird nachträglich mit verschiedenen Verfahren komprimiert: naive Binarisierung (1~Bit), rotationsbasierte Quantisierung nach dem TurboQuant-Prinzip (1~Bit bis 8~Bit) sowie PCA-basierte Dimensionsreduktion.
+Durch den systematischen Vergleich naiver und rotierter Varianten bei gleicher Bitstiefe lassen sich die Effekte der Bitreduktion und der Rotation separat quantifizieren.
 \par
 Die Analyse folgt einer Kausalkette von der Raumgeometrie bis zur praktischen Anwendung.
 Zunächst wird der Float-Raum statistisch charakterisiert, um Erwartungen an den Quantisierungsverlust zu formulieren.
