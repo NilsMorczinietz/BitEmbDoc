@@ -34,6 +34,14 @@ sudo apt install texlive-full
 
 Danach läuft LaTeX Workshop automatisch über die WSL-Installation.
 
+### 4. Manuell kompilieren (Terminal)
+
+```bash
+mkdir -p build/content && latexmk -pdf -f -outdir=build BitEmbeddings.tex
+```
+
+Das erzeugt `build/BitEmbeddings.pdf`. Der Unterordner `build/content/` wird für die `.aux`-Dateien der einzelnen Kapitel benötigt.
+
 ## Zusammenarbeit im Team
 
 ### Workflow
