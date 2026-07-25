@@ -1,18 +1,78 @@
 \chapter{Einleitung}
 %
-Embedding-basierte Suchsysteme sind ein zentraler Baustein moderner KI-Anwendungen.
-Sie werden unter anderem für semantische Suche, Retrieval-Augmented Generation (RAG) und Ähnlichkeitssuche eingesetzt.
-In solchen Systemen werden Texte, Dokumente oder andere Datenobjekte als hochdimensionale Vektoren repräsentiert, deren Speicherung und Vergleich bei großen Datenmengen erhebliche Rechen- und Speicherressourcen erfordern.
-Gleichzeitig wächst der praktische Bedarf an Systemen, die auch auf begrenzter Hardware schnell, speichereffizient und möglichst präzise arbeiten.
-Besonders deutlich wird diese Anforderung im Kontext agentenbasierter KI-Systeme, die über standardisierte Protokolle wie das Model Context Protocol (MCP) \cite{anthropic_2024_mcp} auf externe Werkzeuge zugreifen und dabei Echtzeit-Retrieval unter strikten Latenzanforderungen benötigen.
+\section{Problemstellung}
+%
+Embedding-basierte Suchsysteme bilden einen zentralen Baustein moderner KI-Anwendungen.
+Sie überführen Texte, Dokumente oder andere Datenobjekte in hochdimensionale Vektorrepräsentationen, deren geometrische Nähe semantische Ähnlichkeit abbildet.
+Diese Technik kommt unter anderem bei der semantischen Suche, bei Retrieval-Augmented Generation und bei Ähnlichkeitsanalysen zum Einsatz.
 \par
-Die vorliegende Projektarbeit untersucht daher die Frage, wie sich Embeddings verändern, wenn anstelle klassischer Float-Vektoren stark komprimierte Bit- beziehungsweise Niedrigbit-Repräsentationen verwendet werden.
-Aktuelle Entwicklungen zeigen, dass diese Richtung nicht nur theoretisch interessant ist, sondern auch praktisch relevant.
-Google Research beschreibt mit TurboQuant eine Methode, die Vektoren mittels Rotation und skalaren Quantisierern auf wenige Bits pro Dimension komprimiert und dabei sowohl Distortion als auch Retrieval-Qualität günstig beeinflussen soll \cite{zandieh_2025_turboquant}; das Open-Source-Projekt turbovec setzt diesen Ansatz als Vektorindex mit Python-Anbindung um \cite{turbovec_2024}.
-Parallel dazu zeigen Matryoshka-Embeddings, dass Modelle so trainiert werden können, dass auch reduzierte Embedding-Dimensionen noch leistungsfähig bleiben \cite{kusupati_2022_matryoshka}.
+Der Speicherbedarf solcher Systeme skaliert linear mit der Korpusgröße und der Vektordimension.
+Ein Korpus von einer Million Dokumenten mit 1024-dimensionalen Float32-Vektoren belegt bereits rund 4~GB Arbeitsspeicher allein für die Vektordaten.
+In Szenarien mit zehn oder hundert Millionen Dokumenten übersteigt der Ressourcenbedarf schnell die Kapazitäten typischer Produktivsysteme.
+Hinzu kommt, dass jede Suchanfrage im Brute-Force-Fall eine vollständige Distanzberechnung gegen alle gespeicherten Vektoren erfordert, was die Antwortlatenz linear mit der Korpusgröße ansteigen lässt.
 \par
-Aus dieser Ausgangslage ergibt sich die zentrale Forschungsfrage der Arbeit:
-Welche semantischen Eigenschaften eines Float-Embedding-Raums bleiben unter Quantisierung erhalten, welche gehen verloren, und wie wirkt sich dieser Verlust auf die Retrieval-Qualität aus?
-Der Fokus liegt damit nicht auf einer bloßen Implementierung eines weiteren Suchsystems, sondern auf dem wissenschaftlichen Verständnis, \emph{warum} bestimmte Kompressionsverfahren auf bestimmten Daten besser oder schlechter funktionieren und welche praktischen Konsequenzen sich daraus ergeben.
-Um die gewonnenen Erkenntnisse über einen isolierten Benchmark hinaus zu validieren, werden die untersuchten Retrieval-Systeme zusätzlich als MCP-Server bereitgestellt und in einem realistischen Anwendungsszenario evaluiert.
-Die Arbeit entwickelt dabei keine neuen Quantisierungsverfahren und trainiert keine spezialisierten Embedding-Modelle, sondern analysiert den Informationsverlust bestehender Methoden auf einem kontrollierten Float-Referenzraum und prüft deren praktische Einsetzbarkeit in einer agentenbasierten Architektur.
+Besonders deutlich wird dieses Spannungsfeld im Kontext agentenbasierter KI-Systeme.
+Protokolle wie das Model Context Protocol (MCP) \cite{anthropic_2024_mcp} ermöglichen es Sprachmodellen, zur Laufzeit auf externe Werkzeuge zuzugreifen und dabei Retrieval-Operationen auszuführen.
+Die Echtzeit-Anforderungen solcher Architekturen verschärfen den Bedarf an kompakten, schnell durchsuchbaren Repräsentationen.
+%
+\section{Quantisierung als Lösungsansatz}
+%
+Quantisierung adressiert dieses Problem, indem sie die Genauigkeit der Vektordarstellung gezielt reduziert.
+Anstelle von 32~Bit pro Dimension werden nur noch 4, 2 oder im Extremfall 1~Bit verwendet.
+Der theoretische Speichervorteil ist erheblich: Eine Reduktion von Float32 auf 1~Bit entspricht einem Kompressionsfaktor von~32 bei gleicher Dimensionszahl; kombiniert mit einer Dimensionsreduktion sind Faktoren von über 300 erreichbar.
+\par
+Zugleich ist der Informationsverlust bei Quantisierung unvermeidlich.
+Werden kontinuierliche Werte auf eine endliche Stufenzahl abgebildet, gehen Unterscheidungen verloren.
+Die entscheidende Frage ist daher nicht, \emph{ob} Information verloren geht, sondern \emph{welche} Informationen verloren gehen und ob die für das Retrieval relevante Struktur des Vektorraums erhalten bleibt.
+%
+\section{Stand der Forschung}
+%
+Aktuelle Arbeiten zeigen, dass quantisierte Embeddings nicht nur theoretisch interessant, sondern auch praktisch einsetzbar sind.
+Zandieh et al.\ beschreiben mit TurboQuant eine Methode, die Vektoren mittels orthogonaler Rotation und uniformer skalarer Quantisierung auf wenige Bits pro Dimension komprimiert und dabei sowohl Distortion als auch Retrieval-Qualität günstig beeinflusst \cite{zandieh_2025_turboquant}.
+Das Open-Source-Projekt turbovec setzt diesen Ansatz als Vektorindex mit Python-Anbindung um \cite{turbovec_2024}.
+\par
+Einen komplementären Weg verfolgt Matryoshka Representation Learning \cite{kusupati_2022_matryoshka}, bei dem Embedding-Modelle so trainiert werden, dass auch verkürzte Vektorpräfixe noch leistungsfähig bleiben.
+Nomic Embed v1.5 \cite{nussbaum_2024_nomic} erweitert diesen Ansatz um eine explizite Optimierung auf binäre Ausgabe.
+\par
+Trotz dieser Fortschritte fehlt eine systematische empirische Analyse, die den Einfluss von Quantisierung auf die Suchqualität kausal erklärt.
+Bestehende Benchmarks messen zwar Retrieval-Metriken bei verschiedenen Kompressionsraten, führen aber den beobachteten Qualitätsverlust selten auf die geometrischen Eigenschaften des Ausgangsraums zurück.
+Damit bleibt unklar, \emph{warum} bestimmte Verfahren auf bestimmten Daten besser oder schlechter funktionieren.
+%
+\section{Forschungsfrage und Zielsetzung}
+%
+Die vorliegende Arbeit untersucht die zentrale Frage:
+\emph{Wie beeinflusst die Quantisierung von Embedding-Vektoren die Retrieval-Qualität und den Speicherverbrauch eines vektorbasierten Suchsystems, und welche semantischen Eigenschaften des Float-Raums bleiben unter Kompression erhalten beziehungsweise gehen verloren?}
+\par
+Der Fokus liegt damit auf dem Trade-off zwischen Kompressionsgrad und Suchqualität.
+Die Arbeit zielt nicht auf die Entwicklung neuer Quantisierungsverfahren oder das Training spezialisierter Embedding-Modelle ab, sondern auf ein empirisch fundiertes Verständnis des Informationsverlusts bei nachträglicher Quantisierung.
+Konkret werden folgende Teilfragen adressiert:
+\begin{enumerate}
+  \item Welche statistischen und geometrischen Eigenschaften des Float-Embedding-Raums determinieren die Quantisierbarkeit?
+  \item In welchem Maß bleiben paarweise Distanzen und Nachbarschaftsbeziehungen unter verschiedenen Bittiefen und Dimensionsreduktionen erhalten?
+  \item Ab welchem Kompressionsgrad treten signifikante Verluste in der Retrieval-Qualität auf, gemessen an etablierten Information-Retrieval-Metriken?
+  \item Welches Verhältnis von Speicherersparnis zu Qualitätsverlust ergibt sich für verschiedene Kombinationen aus Bittiefe und Dimensionszahl?
+\end{enumerate}
+%
+\section{Methodischer Ansatz}
+%
+Zur Beantwortung dieser Fragen wird ein kontrolliertes Experiment in sechs aufeinander aufbauenden Phasen durchgeführt.
+Den Ausgangspunkt bildet ein Float32-Referenzraum, der mit dem Modell \texttt{bge-large-en-v1.5} \cite{xiao_2023_bge} auf drei heterogenen BEIR-Datensätzen \cite{thakur_2021_beir} erzeugt wird.
+Dieser Referenzraum wird nachträglich mit verschiedenen Verfahren komprimiert: naive Binarisierung (1~Bit), TurboQuant mit Rotation (2~Bit und 4~Bit) sowie PCA-basierte Dimensionsreduktion.
+\par
+Die Analyse folgt einer Kausalkette von der Raumgeometrie bis zur praktischen Anwendung.
+Zunächst wird der Float-Raum statistisch charakterisiert, um Erwartungen an den Quantisierungsverlust zu formulieren.
+Anschließend wird gemessen, wie gut die komprimierten Repräsentationen Distanzen und lokale Nachbarschaften erhalten.
+Darauf aufbauend wird die tatsächliche Retrieval-Qualität mit NDCG@10, Recall und MRR quantifiziert.
+In einer Effizienzanalyse werden die Speicher- und Laufzeitvorteile den gemessenen Qualitätsverlusten gegenübergestellt.
+Abschließend werden die Retrieval-Systeme als MCP-Server bereitgestellt und in einem agentenbasierten Szenario evaluiert.
+\par
+Die schrittweise Analyse ist methodisch notwendig.
+Würde direkt mit der Retrieval-Evaluation begonnen, ließe sich feststellen, \emph{dass} ein Verfahren schlechter abschneidet, aber nicht \emph{warum}.
+Die vorgeschaltete Raumanalyse ermöglicht es, Qualitätsverluste kausal auf geometrische Eigenschaften des Ausgangsraums zurückzuführen und daraus domänenübergreifende Empfehlungen für den praktischen Einsatz quantisierter Embeddings abzuleiten.
+%
+\section{Aufbau der Arbeit}
+%
+Kapitel~\ref{chap:grundlagen} legt die theoretischen Grundlagen zu Embeddings, Quantisierungsverfahren und dem Model Context Protocol.
+Die Methodik in Kapitel~3 beschreibt den experimentellen Aufbau, die Datensätze und die Evaluationsmetriken.
+Die Ergebnisse werden kapitelweise entlang der sechs Phasen dargestellt und diskutiert.
+Die Arbeit schließt mit einer Zusammenfassung der zentralen Erkenntnisse und einem Ausblick auf weiterführende Fragestellungen.

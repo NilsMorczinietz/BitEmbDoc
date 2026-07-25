@@ -1,123 +1,264 @@
 \chapter{Grundlagen}
 \label{chap:grundlagen}
 %
+Dieses Kapitel führt die theoretischen Grundlagen ein, auf denen die empirische Untersuchung aufbaut.
+Die Darstellung folgt einer logischen Abhängigkeitsstruktur: Zunächst wird das Konzept der Embedding-basierten Suche als Gegenstandsbereich der Arbeit eingeführt.
+Darauf aufbauend werden die Kompressionsverfahren erläutert, die den Untersuchungsgegenstand bilden.
+Anschließend werden die mathematischen Konzepte dargestellt, die für das Verständnis der experimentellen Ergebnisse notwendig sind.
+Den Abschluss bilden die Evaluationsmetriken und der Anwendungskontext.
+%
+%
 \section{Embeddings und vektorbasierte Suche}
+\label{sec:grundlagen_embeddings}
 %
-Embeddings dienen dazu, semantische Information in einen numerischen Vektorraum zu überführen.
-Ob zwei Objekte ähnlich sind, wird nicht über exakte Zeichenfolgen oder Regeln bestimmt, sondern über die geometrische Nähe ihrer Vektoren.
-In der Praxis werden dafür meist Float-Vektoren verwendet, typischerweise in 384, 768, 1024 oder 1536 Dimensionen.
+Embedding-Verfahren überführen diskrete Objekte wie Wörter, Sätze oder Dokumente in Vektoren eines kontinuierlichen Raums $\mathbb{R}^d$.
+Die zentrale Eigenschaft dieser Abbildung ist, dass semantische Ähnlichkeit als geometrische Nähe kodiert wird: Objekte mit verwandter Bedeutung liegen im Vektorraum nahe beieinander, unabhängig von ihrer lexikalischen Oberflächenform.
+\par
+Vektorbasierte Suchsysteme nutzen diese Eigenschaft, um zu einer gegebenen Anfrage die semantisch ähnlichsten Dokumente aus einem Korpus zu identifizieren.
+Die Anfrage wird ebenfalls als Vektor kodiert und anschließend mit allen Dokumentenvektoren verglichen.
+Das Ergebnis ist eine nach Ähnlichkeit sortierte Rangliste.
 %
-Das gebräuchlichste Ähnlichkeitsmaß für Embedding-Vektoren ist die Cosine-Similarity:
+\subsection{Ähnlichkeitsmaße}
+%
+Das in der Embedding-Literatur gebräuchlichste Ähnlichkeitsmaß ist die Cosine-Similarity:
 \begin{equation}
+\label{eq:cosine}
   \text{cos}(\mathbf{x}, \mathbf{y}) = \frac{\mathbf{x} \cdot \mathbf{y}}{\|\mathbf{x}\|_2 \cdot \|\mathbf{y}\|_2}
 \end{equation}
 %
-Sie misst den Winkel zwischen zwei Vektoren, unabhängig von deren Länge.
-Werte nahe~1 bedeuten hohe semantische Ähnlichkeit, Werte nahe~0 Unabhängigkeit.
-Für normierte Vektoren ($\|\mathbf{x}\|_2 = 1$) vereinfacht sich die Cosine-Similarity zum Skalarprodukt, was die Berechnung beschleunigt.
+Sie misst den Kosinus des Winkels zwischen zwei Vektoren und ist damit invariant gegenüber deren Betrag.
+Werte nahe~1 zeigen hohe semantische Ähnlichkeit an, Werte nahe~0 Orthogonalität, also semantische Unabhängigkeit.
+\par
+Für normierte Vektoren ($\|\mathbf{x}\|_2 = 1$) vereinfacht sich Gleichung~\ref{eq:cosine} zum Skalarprodukt $\mathbf{x} \cdot \mathbf{y}$, was die Berechnung auf eine einzelne Matrixmultiplikation reduziert.
+Moderne Embedding-Modelle erzeugen in der Regel bereits normierte Ausgaben, sodass dieser Spezialfall in der Praxis der Regelfall ist.
 %
-Float-Repräsentationen sind flexibel und präzise, verursachen aber bei großen Korpora erhebliche Speicher- und Suchkosten.
-Ein Korpus von 10 Millionen Dokumenten benötigt als Float32-Vektoren mit 1024 Dimensionen rund 41~GB RAM.
-Jede Ähnlichkeitsberechnung erfordert 1024 Multiplikationen und Additionen.
-Bei Brute-Force-Suche skaliert die Suchzeit linear mit der Korpusgröße, was für Echtzeit-Anwendungen schnell unpraktikabel wird.
+\subsection{Speicher- und Rechenkomplexität}
 %
-\section{Quantisierung}
+Der Ressourcenbedarf eines Brute-Force-Suchsystems ist durch zwei Größen dominiert.
+Der Speicherbedarf beträgt $N \cdot d \cdot b$~Bit, wobei $N$ die Korpusgröße, $d$ die Vektordimension und $b$ die Bitbreite pro Wert bezeichnet.
+Für Float32-Darstellungen ($b = 32$) ergibt sich bei $N = 10^7$ Dokumenten und $d = 1024$ ein Speicherbedarf von $10^7 \times 1024 \times 32 \approx 41$~GB.
+\par
+Die Suchkomplexität einer einzelnen Anfrage skaliert mit $\mathcal{O}(N \cdot d)$ Multiplikationen.
+Bei Brute-Force-Suche wächst die Antwortlatenz linear mit der Korpusgröße, was für Echtzeit-Anwendungen mit großen Korpora unpraktikabel wird.
+Diese Skalierungseigenschaften motivieren die im Folgenden beschriebenen Kompressionsverfahren.
 %
-Quantisierung bezeichnet die Abbildung eines kontinuierlichen Wertebereichs auf eine endliche Menge diskreter Stufen, ein Grundproblem der Informationstheorie, das bereits in Shannons Rate-Distortion-Theorie \cite{shannon_1959_ratedistortion} formalisiert wurde.
-Im Kontext von Embeddings bedeutet dies, dass jede Dimension eines Vektors statt mit 32~Bit (Float32) mit weniger Bits dargestellt wird.
 %
-Der Informationsverlust bei Quantisierung ist unvermeidlich.
-Werden $n$ Werte auf $k < n$ Stufen abgebildet, gehen Unterscheidungen verloren.
-Die zentrale Frage ist nicht, \emph{ob} Information verloren geht, sondern \emph{welche} und ob die für eine Anwendung relevante Struktur erhalten bleibt.
+\section{Quantisierung von Vektorrepräsentationen}
+\label{sec:grundlagen_quantisierung}
 %
-Zwei Eigenschaften bestimmen die Qualität einer Quantisierung:
+Quantisierung bezeichnet die Abbildung eines kontinuierlichen Wertebereichs auf eine endliche Menge diskreter Stufen.
+Im informationstheoretischen Rahmen formalisiert Shannons Rate-Distortion-Theorie \cite{shannon_1959_ratedistortion} den fundamentalen Trade-off zwischen der Kompressionsrate (Bits pro Symbol) und der unvermeidlichen Verzerrung (Distortion) der rekonstruierten Werte.
+\par
+Im Kontext von Embedding-Vektoren bedeutet Quantisierung, dass jede Dimension eines Vektors statt mit 32~Bit (Float32) mit einer reduzierten Anzahl von Bits dargestellt wird.
+Der resultierende Informationsverlust ist unvermeidlich: Werden $2^{32}$ mögliche Werte auf $2^b$ Stufen mit $b < 32$ abgebildet, gehen Unterscheidungen verloren.
+Die zentrale Frage ist nicht, \emph{ob} Information verloren geht, sondern \emph{welche} Informationsanteile betroffen sind und ob die für eine gegebene Anwendung relevante Struktur des Raums erhalten bleibt.
+%
+\subsection{Qualitätskriterien}
+%
+Zwei komplementäre Eigenschaften bestimmen die Eignung einer Quantisierung für Retrieval-Anwendungen:
 \begin{itemize}
-  \item \textbf{Distortion}, also die mittlere Verzerrung der Distanzen zwischen Vektoren.
-Niedrige Distortion bedeutet, dass die geometrische Struktur des Raums weitgehend erhalten bleibt.
-  \item \textbf{Distanzerhaltung der Rangordnung}, also ob die relative Reihenfolge der Ähnlichkeiten korrekt bleibt.
-Für Retrieval-Anwendungen ist diese Eigenschaft wichtiger als absolute Distanztreue, da nur das Ranking der Suchergebnisse relevant ist.
+  \item \textbf{Distortion} bezeichnet die mittlere Verzerrung der paarweisen Distanzen zwischen Vektoren.
+Niedrige Distortion bedeutet, dass die geometrische Struktur des Raums -- also die relativen Abstände der Punkte zueinander -- weitgehend erhalten bleibt.
+  \item \textbf{Rangerhaltung} bezeichnet die Fähigkeit, die relative Reihenfolge der Ähnlichkeiten korrekt wiederzugeben.
+Für Retrieval-Systeme, deren Ausgabe eine Rangliste ist, ist diese Eigenschaft wichtiger als absolute Distanztreue.
+Solange das korrekte Dokument den ersten Rang einnimmt, ist die absolute Distanz irrelevant.
 \end{itemize}
 %
+Diese Unterscheidung ist für die Interpretation der experimentellen Ergebnisse zentral.
+Ein Verfahren kann hohe Distortion aufweisen, aber dennoch für Retrieval geeignet sein, sofern die Rangordnung erhalten bleibt.
+Umgekehrt kann niedrige Distortion mit gestörter Rangordnung einhergehen, wenn systematische Verzerrungen die Reihenfolge naher Punkte invertieren.
+%
+%
 \section{Binäre Embeddings und Hamming-Distanz}
+\label{sec:grundlagen_binaer}
 %
-Die extremste Form der Quantisierung reduziert jede Dimension auf ein einzelnes Bit.
-Die naive Variante nutzt das Vorzeichen:
-positive Werte werden zu~1, negative oder Null zu~0.
-Der resultierende Bitvektor benötigt pro Dimension nur $\frac{1}{32}$ des Speichers eines Float32-Vektors.
+Die extremste Form der skalaren Quantisierung reduziert jede Dimension auf ein einzelnes Bit.
+Die naive Binarisierung nutzt das Vorzeichen als Schwellwert:
+\begin{equation}
+\label{eq:binarize}
+  b_i = \begin{cases} 1 & \text{falls } x_i > 0 \\ 0 & \text{sonst} \end{cases}
+\end{equation}
 %
-Die Ähnlichkeit zweier binärer Vektoren wird über die Hamming-Distanz bestimmt, also die Anzahl der Bitpositionen, an denen sich die Vektoren unterscheiden.
-Diese Operation lässt sich auf moderner Hardware durch XOR und Population-Count in wenigen Taktzyklen berechnen, was Geschwindigkeitsvorteile um Größenordnungen gegenüber Float-Cosine ermöglicht.
+Der resultierende Bitvektor $\mathbf{b} \in \{0, 1\}^d$ benötigt pro Dimension $\frac{1}{32}$ des Speichers eines Float32-Vektors, entsprechend einem Kompressionsfaktor von~32.
 %
-Der Nachteil ist der potenzielle Informationsverlust.
-Die Binarisierung verwirft sowohl die Magnitude jeder Dimension als auch die Norminformation des Gesamtvektors.
-Ob dieser Verlust für eine gegebene Anwendung tolerierbar ist, hängt davon ab, wie viel semantische Information im Vorzeichen konzentriert ist.
-Die vorliegende Arbeit untersucht genau diese Frage empirisch.
+\subsection{Hamming-Distanz}
+%
+Die Ähnlichkeit zweier binärer Vektoren wird über die Hamming-Distanz bestimmt:
+\begin{equation}
+  d_H(\mathbf{a}, \mathbf{b}) = \sum_{i=1}^{d} \mathbf{1}[a_i \neq b_i]
+\end{equation}
+%
+Diese Operation lässt sich auf moderner Hardware durch eine XOR-Verknüpfung mit anschließendem Population-Count in wenigen Taktzyklen berechnen.
+Gegenüber der Float-Cosine-Similarity, die $d$ Multiplikationen und $d-1$ Additionen erfordert, ermöglicht dies Geschwindigkeitsvorteile um Größenordnungen.
+%
+\subsection{Informationsverlust der Binarisierung}
+%
+Die Vorzeichenfunktion verwirft zwei Informationsanteile: die Magnitude jeder einzelnen Dimension und die L2-Norm des Gesamtvektors.
+Ob dieser Verlust für eine gegebene Aufgabe tolerierbar ist, hängt davon ab, wie die semantische Information im Vektorraum verteilt ist.
+Liegt die relevante Struktur überwiegend in der Richtung (den Vorzeichen) der Vektoren und nicht in ihren Beträgen, ist der Verlust gering.
+Liegt umgekehrt substantielle Information in den Magnitudenunterschieden, wird die Binarisierung diese zerstören.
+%
 %
 \section{TurboQuant}
+\label{sec:grundlagen_turboquant}
 %
-TurboQuant \cite{zandieh_2025_turboquant} adressiert das Spannungsfeld zwischen Kompaktheit und Genauigkeit über eine Quantisierung in zwei Schritten, die keine Trainingsphase auf den Zieldaten erfordert:
-%
+TurboQuant \cite{zandieh_2025_turboquant} adressiert eine grundlegende Schwäche der naiven skalaren Quantisierung: die ungleiche Informationsverteilung über die Dimensionen.
+In typischen Embedding-Räumen konzentrieren wenige Dimensionen einen Großteil der Varianz, während die meisten Dimensionen fast konstant sind.
+Ein uniformer Quantisierer, der jede Dimension mit derselben Stufenzahl behandelt, verschwendet Bits auf varianzarme Dimensionen und bietet zu wenig Auflösung für varianzreiche.
+\par
+TurboQuant löst dieses Problem in zwei Schritten, die keine Trainingsphase auf den Zieldaten erfordern:
 \begin{enumerate}
-  \item \textbf{Rotation:} Die Eingabevektoren werden mit einer zufälligen orthogonalen Matrix multipliziert.
-Diese Rotation verändert die semantische Information nicht (Winkel und Abstände bleiben identisch), dekorreliert aber die Dimensionen.
-Nach der Rotation sind die Werte gleichmäßiger über die Dimensionen verteilt, sodass ein uniformer Quantisierer jede Dimension gleich effizient nutzen kann.
-  \item \textbf{Skalare Quantisierung:} Jede Dimension des rotierten Vektors wird unabhängig auf wenige Stufen (typischerweise 2~Bit, also 4 Stufen) quantisiert.
+  \item \textbf{Orthogonale Rotation.}
+Die Eingabevektoren werden mit einer zufälligen orthogonalen Matrix $\mathbf{R} \in \text{SO}(d)$ multipliziert:
+$\mathbf{x}' = \mathbf{R}\mathbf{x}$.
+Da orthogonale Transformationen winkel- und abstandserhaltend sind, bleibt die semantische Struktur des Raums exakt erhalten.
+Die Rotation dekorreliert jedoch die Dimensionen und verteilt die Varianz gleichmäßig über alle Achsen.
+  \item \textbf{Uniforme skalare Quantisierung.}
+Jede Dimension des rotierten Vektors wird unabhängig auf $2^b$ gleichmäßig verteilte Stufen quantisiert, wobei $b$ die gewählte Bittiefe bezeichnet.
+Nach der Rotation ist jede Dimension gleich informationsreich, sodass ein uniformer Quantisierer seine verfügbaren Stufen optimal nutzen kann.
 \end{enumerate}
 %
-Der entscheidende Beitrag der Rotation liegt in der Varianzumverteilung.
-In typischen Embedding-Räumen sind manche Dimensionen informationsreich (hohe Varianz), andere fast konstant (niedrige Varianz).
-Ein uniformer Quantisierer verschwendet Bits auf Dimensionen mit geringer Varianz und hat zu wenige Stufen für Dimensionen mit hoher Varianz.
-Die Rotation verteilt die Varianz gleichmäßig und ermöglicht damit eine effizientere Nutzung der verfügbaren Bits.
-Die Methode benötigt zwar keine Trainingsphase auf den Daten, setzt aber implizit voraus, dass eine gleichmäßige Varianzverteilung über die Dimensionen für die nachfolgende Quantisierung vorteilhaft ist.
-Diese Annahme ist für typische Embedding-Räume mit stark asymmetrischer Varianzstruktur empirisch gerechtfertigt.
+\subsection{Varianzumverteilung als Schlüsselmechanismus}
 %
-TurboQuant übertrifft in Nearest-Neighbor-Aufgaben bestehende Product-Quantization-Verfahren \cite{jegou_2011_pq} beim Recall bei gleichzeitig deutlich geringerem Indexierungsaufwand \cite{zandieh_2025_turboquant}.
-Das Open-Source-Projekt turbovec setzt diesen Ansatz als Vektorindex mit Python-Anbindung um \cite{turbovec_2024}.
+Der Beitrag der Rotation liegt formal in der Umverteilung der Varianz.
+Seien $\lambda_1 \geq \lambda_2 \geq \ldots \geq \lambda_d$ die Eigenwerte der Kovarianzmatrix des Embedding-Raums.
+Vor der Rotation ist die Varianz asymmetrisch verteilt; einzelne Hauptkomponenten dominieren.
+Nach einer zufälligen Rotation ist die erwartete Varianz pro Dimension $\frac{1}{d}\sum_{i=1}^d \lambda_i$ und damit für alle Dimensionen gleich.
+Ein uniformer Quantisierer mit $2^b$ Stufen verursacht dann auf jeder Dimension denselben Quantisierungsfehler, was die Gesamt-Distortion minimiert.
+\par
+Die Methode setzt voraus, dass eine gleichmäßige Varianzverteilung die Quantisierung verbessert.
+Diese Annahme ist für typische Embedding-Räume empirisch gerechtfertigt, da diese eine stark asymmetrische Varianzstruktur aufweisen, bei der wenige Dimensionen die Gesamtvarianz dominieren.
 %
-\section{Matryoshka Representation Learning}
+\subsection{Einordnung}
 %
-Ein alternativer Ansatz zur Reduktion des Speicher- und Rechenbedarfs ist Matryoshka Representation Learning (MRL) \cite{kusupati_2022_matryoshka}.
-Dabei wird ein Embedding-Modell so trainiert, dass die Information hierarchisch in den Dimensionen angeordnet ist:
-Die ersten $d$ Dimensionen eines $D$-dimensionalen Vektors bilden bereits eine nutzbare Repräsentation für $d < D$.
+TurboQuant übertrifft in Nearest-Neighbor-Aufgaben bestehende Product-Quantization-Verfahren \cite{jegou_2011_pq} hinsichtlich des Recall bei gleichzeitig deutlich geringerem Indexierungsaufwand, da weder Codebook-Training noch eine Zuordnung zu Subquantisierern erforderlich ist \cite{zandieh_2025_turboquant}.
+Das Open-Source-Projekt turbovec setzt den Ansatz als Vektorindex mit Python-Anbindung um \cite{turbovec_2024}.
 %
-Nomic Embed v1.5 \cite{nussbaum_2024_nomic} erweitert diesen Ansatz um eine binäre Komponente:
-Das Modell wird explizit darauf trainiert, dass auch die Vorzeichen der Dimensionen semantisch aussagekräftig sind.
-Es erzeugt damit Embeddings, die sowohl bei reduzierter Dimensionalität als auch bei Binarisierung leistungsfähig bleiben.
 %
-MRL-basierte Modelle lösen ein anderes Problem als nachträgliche Quantisierung.
-Sie optimieren die \emph{Erzeugung} der Vektoren für Kompression, während nachträgliche Verfahren wie TurboQuant auf \emph{beliebige} bestehende Float-Vektoren angewendet werden können.
-Dieser Unterschied ist für die vorliegende Arbeit relevant und wird in der Methodik bei der Modellwahl diskutiert.
-Unabhängig vom Trainingsverfahren lässt sich das Prinzip der Dimensionsreduktion jedoch auch nachträglich anwenden.
-Eine PCA-Projektion auf die varianzreichsten Hauptkomponenten verfolgt ein ähnliches Ziel wie das Matryoshka-Präfix, unterscheidet sich aber in einem wesentlichen Punkt.
-Während bei MRL die ersten $d$ Originaldimensionen direkt nutzbar sind, erfordert PCA eine Projektionsmatrix, die aus den Daten geschätzt wird.
-Die Reduktion operiert damit auf einem nicht speziell trainierten Raum und ermöglicht die Untersuchung, wie viel Redundanz ein Standard-Embedding-Modell über seine Dimensionen verteilt.
+\section{Dimensionsreduktion durch Hauptkomponentenanalyse}
+\label{sec:grundlagen_pca}
+%
+Neben der Reduktion der Bittiefe pro Dimension bildet die Reduktion der Anzahl der Dimensionen die zweite Achse der Kompression.
+Die Hauptkomponentenanalyse (PCA) projiziert die Vektoren auf die Richtungen maximaler Varianz im Datenraum.
+\par
+Formal wird die Kovarianzmatrix $\mathbf{C} = \frac{1}{N}\mathbf{X}^\top \mathbf{X}$ des zentrierten Datensatzes $\mathbf{X} \in \mathbb{R}^{N \times d}$ eigenwertdekomponiert.
+Die Projektion auf die $d'$ Eigenvektoren mit den größten Eigenwerten ergibt eine Repräsentation in $\mathbb{R}^{d'}$, die den maximalen Anteil der Gesamtvarianz erhält.
+Die kumulative erklärte Varianz
+\begin{equation}
+  V(d') = \frac{\sum_{i=1}^{d'} \lambda_i}{\sum_{i=1}^{d} \lambda_i}
+\end{equation}
+quantifiziert, welcher Informationsanteil nach der Reduktion erhalten bleibt.
+\par
+Für die vorliegende Arbeit ist PCA in doppelter Hinsicht relevant.
+Erstens dient sie als Kompressionsverfahren, das orthogonal zur Quantisierung angewendet wird: Ein Vektor kann zunächst in seiner Dimension reduziert und anschließend quantisiert werden, wobei beide Effekte separierbar bleiben.
+Zweitens liefert die PCA-Analyse des Varianzspektrums eine diagnostische Aussage über die Redundanz des Ausgangsraums.
+Ein Raum, dessen kumulative Varianz bereits bei wenigen Komponenten nahe~1 liegt, enthält hohe lineare Redundanz und ist daher gut komprimierbar.
+%
+\subsection{Abgrenzung zu Matryoshka Representation Learning}
+%
+Ein konzeptionell verwandter Ansatz ist Matryoshka Representation Learning (MRL) \cite{kusupati_2022_matryoshka}, bei dem ein Embedding-Modell so trainiert wird, dass die ersten $d'$ Originaldimensionen eines $d$-dimensionalen Vektors bereits eine nutzbare Repräsentation bilden.
+Im Gegensatz zu PCA erfordert MRL keine nachträgliche Projektion, setzt aber ein speziell trainiertes Modell voraus.
+\par
+Die vorliegende Arbeit verwendet bewusst kein MRL-Modell, sondern nachträgliche PCA auf einem Standard-Embedding-Raum.
+Dies ermöglicht die Untersuchung, wie viel Redundanz ein nicht auf Kompression optimiertes Modell über seine Dimensionen verteilt, und isoliert den Effekt der nachträglichen Dimensionsreduktion vom Trainingsverfahren.
+%
 %
 \section{Intrinsische Dimensionalität}
+\label{sec:grundlagen_intdim}
 %
-Obwohl Embedding-Modelle Vektoren mit einer festen nominalen Dimensionszahl (z.\,B. 1024) erzeugen, ist die tatsächliche Anzahl der Freiheitsgrade oft deutlich geringer.
-Die Daten liegen dann auf einer niedrigdimensionalen Mannigfaltigkeit innerhalb des hochdimensionalen Raums, ähnlich wie eine gekrümmte Fläche in einem dreidimensionalen Raum nur zwei Freiheitsgrade besitzt.
-%
-Die intrinsische Dimensionalität quantifiziert diesen Effekt.
-Ist sie deutlich kleiner als die nominale Dimension, enthält der Raum Redundanz.
-Viele Dimensionen tragen dann keine unabhängige Information bei, sondern sind durch die anderen vorhersagbar.
-%
+Obwohl Embedding-Modelle Vektoren mit einer festen nominalen Dimensionszahl $d$ erzeugen, ist die tatsächliche Anzahl der Freiheitsgrade der Daten oft deutlich geringer.
+Die Punkte liegen dann auf einer niedrigdimensionalen Mannigfaltigkeit innerhalb des umgebenden hochdimensionalen Raums.
+\par
+Die intrinsische Dimensionalität $d_\text{int}$ quantifiziert diese effektive Anzahl unabhängiger Freiheitsgrade.
+Ist $d_\text{int} \ll d$, enthält der Raum substantielle Redundanz: Viele Dimensionen tragen keine unabhängige Information bei, sondern sind durch die übrigen vorhersagbar.
+\par
 Für die Quantisierung hat dies direkte Konsequenzen.
-Redundante Dimensionen können mit geringem Verlust auf wenige Bits reduziert werden, da ihre Information bereits in anderen Dimensionen enthalten ist.
-Ein Raum mit niedriger intrinsischer Dimensionalität ist daher grundsätzlich besser für Quantisierung geeignet als ein Raum, der seine volle nominale Kapazität nutzt.
+Redundante Dimensionen können mit geringem Informationsverlust auf wenige Bits reduziert oder durch Dimensionsreduktion entfernt werden, da ihre Information bereits in anderen Dimensionen kodiert ist.
+Ein Raum mit niedriger intrinsischer Dimensionalität ist daher grundsätzlich besser für Kompression geeignet als ein Raum, der seine volle nominale Kapazität nutzt.
+\par
+Zur Schätzung der intrinsischen Dimensionalität existieren verschiedene Verfahren.
+Der TwoNN-Schätzer \cite{facco_2017_twonn} nutzt die Verhältnisse der Abstände zum ersten und zweiten nächsten Nachbarn und erfasst damit die lokale Mannigfaltigkeitsstruktur.
+Die PCA-basierte Schätzung über die Anzahl der Komponenten, die einen definierten Varianzanteil (typischerweise 95\%) erklären, erfasst hingegen die globale lineare Dimensionalität.
+Beide Perspektiven ergänzen einander: Stimmen die Schätzer überein, ist die Aussage robust; divergieren sie, deutet dies auf nichtlineare Strukturen hin, die eine rein lineare Analyse nicht erfasst.
+%
+%
+\section{Evaluationsmetriken für Information Retrieval}
+\label{sec:grundlagen_metriken}
+%
+Die Bewertung der Suchqualität erfordert Metriken, die quantifizieren, wie gut eine Rangliste die tatsächlich relevanten Dokumente identifiziert.
+Im Folgenden werden die in dieser Arbeit verwendeten Standardmetriken der Information-Retrieval-Evaluation eingeführt.
+%
+\subsection{Normalized Discounted Cumulative Gain}
+%
+NDCG@$k$ bewertet eine Rangliste unter Berücksichtigung sowohl der Relevanzgrade als auch der Rankingpositionen.
+Die Grundlage bildet der Discounted Cumulative Gain:
+\begin{equation}
+  \text{DCG@}k = \sum_{i=1}^{k} \frac{2^{rel_i} - 1}{\log_2(i + 1)}
+\end{equation}
+%
+wobei $rel_i$ die Relevanzstufe des Dokuments auf Position $i$ bezeichnet.
+Der Logarithmus im Nenner bewirkt eine positionsabhängige Diskontierung: Relevante Dokumente auf späteren Positionen tragen weniger zum Gesamtwert bei als solche auf frühen Positionen.
+\par
+Die Normalisierung erfolgt durch Division mit dem idealen DCG (IDCG), der sich ergibt, wenn die Dokumente optimal nach ihrer Relevanz sortiert wären:
+\begin{equation}
+  \text{NDCG@}k = \frac{\text{DCG@}k}{\text{IDCG@}k}
+\end{equation}
+%
+NDCG@$k$ liegt im Intervall $[0, 1]$, wobei~1 eine perfekte Rangliste anzeigt.
+Die Metrik eignet sich insbesondere für Datensätze mit mehrstufigen Relevanzannotationen, da sie feinere Relevanzunterschiede abbildet.
+%
+\subsection{Recall}
+%
+Recall@$k$ misst den Anteil der relevanten Dokumente, die in den ersten $k$ Positionen der Rangliste enthalten sind:
+\begin{equation}
+  \text{Recall@}k = \frac{|\{d \in \text{Top-}k \mid d \text{ relevant}\}|}{|\{d \in \text{Korpus} \mid d \text{ relevant}\}|}
+\end{equation}
+%
+Die Metrik quantifiziert die Vollständigkeit der Suche.
+Recall@10 ist für Endnutzer-Systeme relevant, in denen nur wenige Ergebnisse angezeigt werden.
+Recall@100 ist für zweistufige Systeme relevant, in denen eine schnelle erste Stufe eine Kandidatenmenge erzeugt, die von einer präziseren zweiten Stufe nachgerankt wird.
+%
+\subsection{Mean Reciprocal Rank}
+%
+MRR bewertet, an welcher Position das erste relevante Dokument in der Rangliste erscheint:
+\begin{equation}
+  \text{MRR} = \frac{1}{|Q|} \sum_{q \in Q} \frac{1}{\text{rank}_q}
+\end{equation}
+%
+wobei $\text{rank}_q$ die Position des ersten relevanten Dokuments für Anfrage~$q$ bezeichnet.
+MRR ist besonders aussagekräftig für Anwendungen, in denen der Nutzer primär das erste relevante Ergebnis sucht, etwa bei Frage-Antwort-Systemen.
+%
+\subsection{Zusammenspiel der Metriken}
+%
+Die drei Metriken erfassen komplementäre Aspekte der Suchqualität.
+NDCG@$k$ bewertet die Gesamtqualität der Rangliste unter Berücksichtigung von Relevanzgraden und Positionen.
+Recall@$k$ misst Vollständigkeit unabhängig von der internen Reihenfolge der relevanten Treffer.
+MRR fokussiert auf den Einzelfall des ersten relevanten Treffers.
+\par
+Für die vorliegende Arbeit dient NDCG@10 als primäre Metrik, da sie als Standardmaß im BEIR-Benchmark \cite{thakur_2021_beir} etabliert ist und mehrstufige Relevanzurteile korrekt verarbeitet.
+Recall und MRR ergänzen die Analyse, indem sie spezifische Fehlermodi sichtbar machen: Ein System mit hohem NDCG, aber niedrigem Recall bei kleinem $k$ ist für Endnutzer möglicherweise ungeeignet, obwohl die Gesamtrangliste gut ist.
+%
 %
 \section{Model Context Protocol}
 \label{sec:grundlagen_mcp}
 %
 Das Model Context Protocol (MCP) \cite{anthropic_2024_mcp} ist ein offener Standard, der eine einheitliche Schnittstelle zwischen KI-Agenten und externen Werkzeugen definiert.
-Es formalisiert die Kommunikation zwischen einem Host (typischerweise ein Large Language Model) und Servern, die Datenzugriff, Retrieval oder Berechnungen bereitstellen.
+Es formalisiert die Kommunikation zwischen einem Host-System (typischerweise ein Large Language Model) und Servern, die spezialisierte Fähigkeiten bereitstellen, etwa Datenzugriff, Berechnungen oder Retrieval-Operationen.
 %
-Die Architektur folgt einem Client-Server-Modell.
-Der Host sendet strukturierte Anfragen über einen MCP-Client an einen oder mehrere MCP-Server, die jeweils spezifische Fähigkeiten anbieten, etwa Dateizugriff, Datenbankabfragen oder semantische Suche.
+\subsection{Architektur}
+%
+Die Kommunikation folgt einem Client-Server-Modell.
+Der Host sendet strukturierte Anfragen über einen MCP-Client an einen oder mehrere MCP-Server.
+Jeder Server exponiert eine definierte Menge von Werkzeugen (\emph{Tools}), die der Agent zur Laufzeit aufrufen kann.
 Die Kommunikation erfolgt über JSON-RPC, wodurch Server sprachunabhängig implementierbar sind.
 %
+\subsection{Relevanz für die vorliegende Arbeit}
+%
 Für die vorliegende Arbeit ist MCP in zweierlei Hinsicht relevant.
-Zum einen erzwingt das Protokoll eine klare Trennung zwischen dem Sprachmodell, das Anfragen formuliert, und dem Retrieval-System, das Ergebnisse liefert.
-Diese Trennung ermöglicht es, verschiedene Retrieval-Backends (Float, binär, quantisiert) hinter derselben Schnittstelle auszutauschen, ohne den Agenten selbst zu modifizieren.
-Zum anderen stellt die agentenbasierte Nutzung implizite Latenzanforderungen an die Werkzeugkommunikation.
-Ein Agent, der bei jeder Nutzerinteraktion mehrere Tool-Aufrufe durchführt, reagiert nur dann flüssig, wenn jeder einzelne Aufruf in niedriger Latenz beantwortet wird.
-Komprimierte Repräsentationen, die schnellere Suchoperationen ermöglichen, haben in diesem Kontext einen direkten praktischen Vorteil.
+Erstens erzwingt die Protokollarchitektur eine saubere Trennung zwischen dem Sprachmodell, das Anfragen formuliert, und dem Retrieval-System, das Ergebnisse liefert.
+Diese Trennung ermöglicht es, verschiedene Retrieval-Backends -- Float, quantisiert, binär -- hinter derselben Schnittstelle auszutauschen, ohne den Agenten zu modifizieren.
+Unterschiede im Agentenverhalten sind damit eindeutig auf das Backend zurückführbar.
+\par
+Zweitens stellt die agentenbasierte Nutzung implizite Latenzanforderungen.
+Ein Agent, der pro Nutzerinteraktion mehrere Werkzeugaufrufe durchführt, reagiert nur dann flüssig, wenn jeder einzelne Aufruf in niedriger Latenz beantwortet wird.
+Komprimierte Repräsentationen, die geringeren Speicherbedarf und potenziell schnellere Distanzberechnungen ermöglichen, haben in diesem Kontext einen unmittelbaren praktischen Vorteil.
