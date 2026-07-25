@@ -56,6 +56,8 @@ Damit ist der Ausgangsraum hochdimensional genug für eine aussagekräftige Quan
   \item Als Open-Source-Modell ermöglicht es vollständige Reproduzierbarkeit.
 \end{itemize}
 %
+Der vollständige Quellcode des Experiments, einschließlich aller Analyseskripte, Quantisierungsverfahren und Evaluationspipelines, ist öffentlich verfügbar.\footnote{\url{https://github.com/JeskoFoerster/BitEmb}}
+%
 Eine naheliegende Alternative wäre \texttt{nomic-embed-text-v1.5} \cite{nussbaum_2024_nomic}, das durch Matryoshka-Training bereits auf variable Dimensionsgrößen und binäre Ausgabe optimiert ist.
 Genau diese Optimierung macht es für die vorliegende Untersuchung jedoch weniger geeignet.
 Da das Ziel ist, den Informationsverlust bei nachträglicher Quantisierung zu messen, würde ein bereits auf Kompression trainiertes Modell den Effekt der Quantisierungsverfahren selbst verschleiern.
