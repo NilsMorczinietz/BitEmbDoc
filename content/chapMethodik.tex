@@ -86,16 +86,12 @@ Bei end-to-end trainierten Modellen wären Unterschiede in der Retrieval-Qualit�
 Die Wahl der komprimierten Varianten bildet verschiedene Punkte eines Kompression-Qualität-Spektrums ab.
 Die naive Binarisierung steht für maximale Kompression bei minimaler Methodik.
 TurboQuant 1-Bit und 2-Bit repräsentieren sehr starke Kompression mit vorgeschalteter Rotation, während TurboQuant 4-Bit und 8-Bit moderatere Kompressionsstufen mit höherer erwarteter Qualitätserhaltung abdecken.
-Zusätzlich werden naive 8-Bit-, 4-Bit- und 2-Bit-Varianten als Ablationen verwendet, um den Effekt der Rotation vom Effekt der reinen Bitreduktion zu trennen.
+Zusätzlich werden naive 8-Bit-, 4-Bit-, 2-Bit- und 1-Bit-Varianten ohne Rotation als Ablationen verwendet, um den Effekt der Rotation vom Effekt der reinen Bitreduktion zu trennen.
 Float16 dient als niedrigpräzise Float-Referenz zwischen Float32 und 8-Bit-Quantisierung.
 %
 \subsection{Binäre Repräsentationen}
 %
-Die naive Binarisierung wendet einen Vorzeichenschwellwert direkt im ursprünglichen PCA-Raum an:
-\begin{equation}
-  b_i = \begin{cases} 1 & \text{falls } x_i > 0 \\ 0 & \text{sonst} \end{cases}
-\end{equation}
-%
+Die naive Binarisierung wendet den in Kapitel~\ref{chap:grundlagen} definierten Vorzeichenschwellwert an (Gleichung~\ref{eq:binarize}).
 Jede Dimension wird auf ein einzelnes Bit reduziert, was pro Dimension einem Kompressionsfaktor von 32 gegenüber Float32 entspricht.
 Die Ähnlichkeit zweier binärer Vektoren wird über die Hamming-Distanz bestimmt.
 %
@@ -110,7 +106,10 @@ Dadurch lässt sich messen, ob Rotation auch bei maximaler Kompression noch Retr
 %
 \subsection{TurboQuant-Repräsentation}
 %
-Die TurboQuant-Varianten nutzen das Verfahren nach \cite{zandieh_2025_turboquant}, das eine datenunabhängige orthogonale Rotation mit anschließender skalarer Quantisierung kombiniert.
+Die TurboQuant-Varianten implementieren das Kernprinzip nach \cite{zandieh_2025_turboquant}: eine datenunabhängige orthogonale Rotation mit anschließender uniformer skalarer Quantisierung.
+Die konkrete Umsetzung verwendet eine zufällige Rotationsmatrix aus SO($d$) anstelle der im Paper beschriebenen Randomized Hadamard Transform und quantisiert anschließend jede Dimension per Min-Max-Normalisierung auf $2^b$ gleichverteilte Stufen.
+Diese vereinfachte Implementierung erhält die konzeptionell entscheidende Eigenschaft -- die Varianzumverteilung durch Rotation vor der uniformen Quantisierung -- verzichtet aber auf die laufzeitoptimierte Hadamard-basierte Rotation und die theoretisch optimierten Quantisierungsgrenzen des vollständigen Verfahrens.
+Für die Forschungsfrage ist diese Vereinfachung unproblematisch, da nicht die Laufzeit der Rotationsphase, sondern die resultierende Retrieval-Qualität der komprimierten Repräsentationen untersucht wird.
 Das Verfahren wird in mehreren Bitstiefen evaluiert:
 \begin{itemize}
   \item \textbf{TurboQuant 8-Bit} (256 Quantisierungsstufen pro Dimension, Kompressionsfaktor 4 gegenüber Float32).
@@ -201,18 +200,14 @@ Ob diese Vorhersagen zutreffen, wird in Phase~2 überprüft.
 %
 \subsection{Intrinsische Dimensionalität}
 %
-Die intrinsische Dimensionalität (vgl.
-Kapitel~\ref{chap:grundlagen}) wird über zwei komplementäre Verfahren geschätzt:
-\begin{itemize}
-  \item \textbf{TwoNN} \cite{facco_2017_twonn}, ein nächste-Nachbarn-basierter Schätzer, der die Verhältnisse der Abstände zum ersten und zweiten Nachbarn auswertet.
-Er erfasst die lokale Dimensionalität der Datenmannigfaltigkeit.
-  \item \textbf{PCA, erklärte Varianz}, also die Anzahl der Hauptkomponenten, die 95\% der Gesamtvarianz erklären.
-Dieses Maß erfasst die globale lineare Dimensionalität.
-\end{itemize}
+Die intrinsische Dimensionalität (vgl.\ Abschnitt~\ref{sec:grundlagen_intdim}) wird über die beiden dort beschriebenen komplementären Verfahren geschätzt: TwoNN \cite{facco_2017_twonn} für die lokale Mannigfaltigkeitsstruktur und die PCA-basierte Schätzung über die Anzahl der Hauptkomponenten für 95\% erklärte Varianz für die globale lineare Dimensionalität.
 %
-Zwei Schätzer statt eines sind notwendig, weil sie verschiedene Aspekte messen.
-PCA erfasst globale lineare Redundanz, TwoNN erfasst lokale Mannigfaltigkeitsstruktur.
-Stimmen beide überein, ist die Aussage robust.
+Das Ergebnis liefert eine konkrete Vorhersage für die Dimensionsreduktion in den späteren Phasen.
+Liegt die intrinsische Dimensionalität deutlich unter der nominalen ($d_\text{int} \ll 1024$), sollte eine PCA-Reduktion auf $d \geq d_\text{int}$ nur geringen Qualitätsverlust verursachen, während eine Reduktion auf $d < d_\text{int}$ substantielle Information zerstört.
+Diese Schwelle wird in Phase~2 und Phase~3 empirisch überprüft.
+%
+Die Kombination beider Schätzer erlaubt eine Aussage über die Robustheit des Ergebnisses.
+Stimmen beide überein, ist die geschätzte Redundanz belastbar.
 Divergieren sie, deutet dies auf nichtlineare Struktur hin, die PCA nicht erkennt.
 %
 \section{Phase~2: Distanz- und Fehleranalyse}
@@ -223,8 +218,11 @@ Diese Phase beantwortet die Kernfrage, ob die geometrischen Beziehungen zwischen
 \subsection{Paarweise Distanzkorrelation}
 %
 Aus dem Dokumentenkorpus werden 10\,000 Paare gleichverteilt zufällig gezogen.
-Für jedes Paar werden Distanzwerte im Float-Raum und in den komprimierten Räumen berechnet, insbesondere TurboQuant 4-Bit, TurboQuant 2-Bit und 1-Bit-Hamming.
-Die Paarstichprobe ist für alle Repräsentationen identisch.
+Für jedes Paar werden Distanzwerte im Float-Raum und in allen neun komprimierten Repräsentationen berechnet (Float16, naive und rotierte 8-Bit-, 4-Bit-, 2-Bit- und 1-Bit-Varianten).
+Die Paarstichprobe ist für alle Repräsentationen identisch, sodass Unterschiede ausschließlich auf das Kompressionsverfahren zurückführbar sind.
+%
+Da die Repräsentationen unterschiedliche native Distanzmetriken verwenden -- Cosine-Distanz für Float32 und Float16, euklidische Distanz auf dequantisierten Vektoren für die Multi-Bit-Varianten und Hamming-Distanz für die 1-Bit-Varianten -- werden alle Distanzvektoren vor dem Vergleich per Min-Max-Normalisierung auf das Intervall $[0, 1]$ abgebildet.
+Für normierte Eingabevektoren sind Cosine-Distanz und euklidische Distanz ohnehin linear proportional, sodass die Normalisierung keinen Informationsverlust verursacht.
 %
 Die Stichprobengröße von 10\,000 Paaren ist so gewählt, dass das 95\%-Konfidenzintervall für den Pearson-Korrelationskoeffizienten bei $r = 0{,}9$ eine Breite von weniger als $\pm 0{,}005$ besitzt.
 Damit sind selbst kleine Unterschiede zwischen den Verfahren statistisch auflösbar.
@@ -237,7 +235,7 @@ Ein hoher Wert nahe~1 bedeutet, dass die Quantisierung die Distanzen lediglich l
 %
 \paragraph{Spearman~$\rho$.}
 Der Spearman-Rangkorrelationskoeffizient misst, ob die Rangordnung der Distanzen erhalten bleibt.
-Für Retrieval-Anwendungen ist dieses Maß entscheidender als Pearson~$r$, denn solange das Ranking korrekt ist, sind absolute Distanzverzerrungen irrelevant.
+Für Retrieval-Anwendungen ist dieses Maß entscheidender als Pearson~$r$ (vgl.\ Abschnitt~\ref{sec:grundlagen_quantisierung}, Rangerhaltung).
 %
 Die Kombination beider Maße erlaubt eine differenzierte Aussage.
 Sind beide hoch, ist die Quantisierung strukturtreu.
@@ -247,7 +245,7 @@ Sind beide niedrig, ist die semantische Struktur substantiell beschädigt.
 \subsection{Distortion}
 %
 Zusätzlich zur Korrelation wird die absolute Verzerrung gemessen.
-Für jedes der 10\,000 Paare wird der Fehler $|d_\text{float} - d_\text{quantized}|$ berechnet, wobei die Distanzen zuvor auf $[0, 1]$ normiert werden.
+Für jedes der 10\,000 Paare wird der Fehler $|d_\text{float} - d_\text{quantized}|$ auf den bereits normierten Distanzen berechnet.
 %
 Als Aggregatmaße dienen:
 \begin{itemize}
@@ -278,9 +276,6 @@ Der Overlap ist der Anteil der Nachbarn, die in beiden Mengen enthalten sind:
 %
 Dieser Wert wird über alle Dokumente gemittelt und als Funktion von $k$ (für $k \in \{5, 10, 20\}$) berichtet.
 Die Variation von $k$ ist wichtig, weil sie zeigt, ob Quantisierung vor allem die engste Nachbarschaft oder auch etwas breitere lokale Strukturen verändert.
-%
-Als Referenzwert dient der erwartete Overlap bei zufälligem Ranking: $\mathbb{E}[\text{Overlap}] = k / N$, wobei $N$ die Korpusgröße ist.
-Für die verwendeten Datensätze liegt dieser Zufalls-Overlap unter 0{,}02, sodass bereits moderate Overlap-Werte eine deutliche Strukturerhaltung anzeigen.
 %
 Als Referenzwert dient der erwartete Overlap bei zufälligem Ranking: $\mathbb{E}[\text{Overlap}] = k / N$, wobei $N$ die Korpusgröße ist.
 Für die verwendeten Datensätze liegt dieser Zufalls-Overlap unter 0{,}02, sodass bereits moderate Overlap-Werte eine deutliche Strukturerhaltung anzeigen.
