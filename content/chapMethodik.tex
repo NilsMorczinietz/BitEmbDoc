@@ -266,18 +266,52 @@ Für Schwellwert-basierte Systeme wäre dies problematisch.
 Die Distanzkorrelation aus Phase~2 betrachtet globale Paare.
 Für Retrieval ist jedoch die \emph{lokale} Struktur entscheidend.
 Es kommt nicht darauf an, ob weit entfernte Dokumente korrekt als weit entfernt erkannt werden, sondern ob die nächsten Nachbarn eines Dokuments dieselben bleiben.
+Phase~3 operiert daher auf derselben zweidimensionalen Versuchsmatrix (neun komprimierte Repräsentationen $\times$ sieben PCA-Dimensionen), bewertet aber nicht paarweise Distanzerhaltung, sondern die Erhaltung lokaler Nachbarschaftsstrukturen.
+%
+\subsection{Ablauf}
+%
+Für jede Kombination aus PCA-Dimension und Repräsentation wird der folgende Ablauf durchgeführt:
+\begin{enumerate}
+  \item \textbf{PCA-Projektion.} Die Float32-Embeddings werden auf die gewählte Dimensionszahl $d$ projiziert (entfällt für $d = 1024$).
+  \item \textbf{k-NN-Bestimmung im Float-Raum (Ground Truth).} Für jedes Dokument werden die $k$ nächsten Nachbarn über Cosine-Similarity berechnet.
+Da die Embeddings L2-normiert sind, reduziert sich dies auf maximales Skalarprodukt.
+Die resultierende Nachbarschaftsmenge $N_k^\text{float}(i)$ bildet die Referenz.
+  \item \textbf{k-NN-Bestimmung in jedem komprimierten Raum.} Die Nachbarn werden mit der jeweiligen nativen Distanzmetrik der Repräsentation bestimmt:
+  \begin{itemize}
+    \item \textbf{Float16}: Cosine-Similarity auf Float16-gecasteten Vektoren.
+    \item \textbf{Naive und TurboQuant 2-Bit, 4-Bit, 8-Bit}: Euklidische Distanz auf dequantisierten Vektoren.
+Die Quantisierung und anschließende Dequantisierung simuliert den Informationsverlust; die Nachbarsuche erfolgt dann auf den rekonstruierten Werten.
+    \item \textbf{Naive und TurboQuant 1-Bit}: Hamming-Distanz auf bitgepackten Binärvektoren.
+  \end{itemize}
+  \item \textbf{Berechnung von Overlap und Trustworthiness.} Für jedes $k \in \{5, 10, 20\}$ werden die Metriken berechnet.
+\end{enumerate}
+%
+Die Suche erfolgt in allen Räumen exakt (Brute-Force), konsistent mit dem Vorgehen in Phase~2 und~4.
+%
+Da die k-NN-Berechnung für jedes Dokument Distanzen zu allen anderen erfordert, skaliert der Aufwand quadratisch mit der Korpusgröße ($\mathcal{O}(N^2 \cdot d)$).
+Im Gegensatz zu Phase~2, die unabhängig von $N$ nur 10\,000 zufällige Paare zieht, wird das Korpus daher auf maximal 5\,000 Dokumente begrenzt.
+Die Auswahl erfolgt als gleichverteilte Zufallsstichprobe mit festem Seed, sodass die Ergebnisse reproduzierbar bleiben.
+Diese Stichprobengröße ist ausreichend, um stabile Mittelwerte für Overlap und Trustworthiness zu erhalten, da beide Metriken über alle $N$ Dokumente gemittelt werden und die Varianz des Mittelwerts mit $1/N$ abnimmt.
+%
+\subsection{Distanzmetriken in den komprimierten Räumen}
+%
+Die Wahl der Distanzmetrik pro Repräsentation spiegelt das wider, was ein reales Retrieval-System zur Suchzeit verwenden würde.
+Float-Vektoren werden über Cosine-Similarity verglichen, Multi-Bit-Quantisierungen über euklidische Distanz auf den dequantisierten Werten, und binäre Repräsentationen über Hamming-Distanz.
+%
+Die euklidische Distanz auf dequantisierten Vektoren ist konsistent mit der asymmetrischen Distanzberechnung der späteren Retrieval-Phase.
+Für normierte Eingabevektoren gilt $\|a - b\|^2 = 2 - 2 \cos(a, b)$, sodass die euklidische Distanz nach Dequantisierung dasselbe Ranking erzeugt wie Cosine-Distanz, sofern die Dequantisierung die Normierung nicht substantiell verzerrt.
+Damit sind die Ergebnisse zwischen Phase~3 und Phase~4 methodisch vergleichbar.
 %
 \subsection{Neighborhood Overlap}
 %
-Für jedes Dokument werden die nächsten Nachbarn im Float-Raum bestimmt.
-Anschließend werden die nächsten Nachbarn im komprimierten Raum bestimmt.
-Der Overlap ist der Anteil der Nachbarn, die in beiden Mengen enthalten sind:
+Der Overlap misst den Anteil der Nachbarn, die im Float-Raum und im komprimierten Raum übereinstimmen:
 \begin{equation}
   \text{Overlap}(i) = \frac{|N_k^\text{float}(i) \cap N_k^\text{quant}(i)|}{k}
 \end{equation}
 %
-Dieser Wert wird über alle Dokumente gemittelt und als Funktion von $k$ (für $k \in \{5, 10, 20\}$) berichtet.
-Die Variation von $k$ ist wichtig, weil sie zeigt, ob Quantisierung vor allem die engste Nachbarschaft oder auch etwas breitere lokale Strukturen verändert.
+Dieser Wert wird über alle Dokumente gemittelt und als Funktion von $k$ berichtet.
+Die Variation von $k$ zeigt, ob Quantisierung vor allem die engste Nachbarschaft ($k = 5$) oder auch breitere lokale Strukturen ($k = 20$) verändert.
+Für Retrieval-Systeme, die typischerweise die Top-10 anzeigen, ist $k = 10$ der praxisrelevanteste Wert.
 %
 Als Referenzwert dient der erwartete Overlap bei zufälligem Ranking: $\mathbb{E}[\text{Overlap}] = k / N$, wobei $N$ die Korpusgröße ist.
 Für die verwendeten Datensätze liegt dieser Zufalls-Overlap unter 0{,}02, sodass bereits moderate Overlap-Werte eine deutliche Strukturerhaltung anzeigen.
@@ -285,7 +319,7 @@ Für die verwendeten Datensätze liegt dieser Zufalls-Overlap unter 0{,}02, soda
 \subsection{Trustworthiness}
 %
 Neighborhood Overlap ist symmetrisch und unterscheidet nicht zwischen zwei verschiedenen Fehlertypen.
-Trustworthiness \cite{venna_2006_trustworthiness} differenziert und misst, ob im komprimierten Raum \emph{falsche} Nachbarn eingeführt werden, also Dokumente, die im Float-Raum weit entfernt sind, im Bit-Raum aber nahe erscheinen.
+Trustworthiness \cite{venna_2006_trustworthiness} differenziert und misst, ob im komprimierten Raum \emph{falsche} Nachbarn eingeführt werden, also Dokumente, die im Float-Raum weit entfernt sind, im komprimierten Raum aber nahe erscheinen.
 %
 Formal:
 \begin{equation}
@@ -293,15 +327,16 @@ Formal:
 \end{equation}
 %
 wobei $U_k(i)$ die Menge der Punkte bezeichnet, die im komprimierten Raum unter den $k$ Nachbarn von $i$ sind, aber im Float-Raum nicht, und $r(i,j)$ der Rang von $j$ bezüglich $i$ im Float-Raum ist.
+Der Rang $r(i,j)$ wird dabei über die Cosine-Similarity im Float-Raum bestimmt.
 %
-Dieser Fehlertyp ist für Retrieval besonders schädlich, da falsche Nachbarn irrelevante Suchergebnisse bedeuten, die dem Nutzer angezeigt werden.
+Der Strafterm $(r(i,j) - k)$ gewichtet Fehler proportional zur Schwere: Ein Dokument, das im Float-Raum auf Rang~50 steht ($r = 50$), aber im komprimierten Raum unter die Top-5 gelangt, wird stärker bestraft ($50 - 5 = 45$) als eines von Rang~8 ($8 - 5 = 3$).
 Ein Wert von $T = 1$ bedeutet, dass keine falschen Nachbarn eingeführt werden.
 %
-Die Wahl, Trustworthiness statt des Gegenstücks Continuity zu verwenden, ist bewusst.
-Continuity misst, ob echte Nachbarn verloren gehen.
-Für die Forschungsfrage ist aber Trustworthiness aussagekräftiger, weil sie direkt die Precision der Nachbarschaft quantifiziert, und Precision ist im Retrieval-Kontext die nutzerrelevante Größe.
-Continuity wird nicht separat berichtet, da sie eine konzeptionell andere Fehlerperspektive einnimmt (fehlende Nachbarn statt falsche Nachbarn).
-Für ein Retrieval-System ist es gravierender, irrelevante Dokumente anzuzeigen (niedriges Trustworthiness), als einzelne relevante Dokumente zu übersehen (niedrige Continuity), solange genügend relevante Treffer verbleiben.
+Dieser Fehlertyp -- das Einführen falscher Nachbarn -- ist für Retrieval besonders schädlich, da er irrelevante Suchergebnisse bedeutet, die relevante Treffer aus den Top-$k$ verdrängen.
+Die Wahl, Trustworthiness statt des Gegenstücks Continuity zu berichten, ist bewusst.
+Continuity misst, ob echte Nachbarn verloren gehen (Recall-Perspektive).
+Trustworthiness quantifiziert hingegen direkt die Precision der Nachbarschaft, die im Retrieval-Kontext die nutzerrelevantere Größe ist.
+Für ein Retrieval-System ist es gravierender, irrelevante Dokumente anzuzeigen, als einzelne relevante Dokumente zu übersehen, solange genügend relevante Treffer verbleiben.
 Ob Letzteres der Fall ist, überprüft der Recall in Phase~4 direkt.
 %
 \section{Phase~4: Retrieval-Evaluation}
