@@ -1,6 +1,7 @@
 # LaTeX build output
 build/
 *.pdf
+!images/*.pdf
 *.aux
 *.bbl
 *.bcf
