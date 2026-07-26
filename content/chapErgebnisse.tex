@@ -1,0 +1,172 @@
+\chapter{Ergebnisse und Diskussion}
+\label{chap:ergebnisse}
+%
+Dieses Kapitel präsentiert die experimentellen Ergebnisse und interpretiert sie im Kontext der Forschungsfrage.
+Die Darstellung folgt der Phasenstruktur des Experiments: Für jede Phase werden zunächst die Ergebnisse berichtet, anschließend im Hinblick auf die in der Methodik formulierten Erwartungen diskutiert und schließlich Implikationen für die nachfolgenden Phasen abgeleitet.
+%
+\section{Phase~1: Charakterisierung des Float-Raums}
+\label{sec:ergebnisse_phase1}
+%
+Phase~1 analysiert den unkomprimierten Float-Raum, um Erwartungen an das Quantisierungsverhalten zu formulieren.
+Die Ergebnisse zeigen, dass der von \texttt{bge-large-en-v1.5} erzeugte Embedding-Raum Eigenschaften besitzt, die Quantisierung systematisch begünstigen.
+%
+\subsection{Normverteilung}
+%
+Tabelle~\ref{tab:phase1_norms} fasst die Normstatistiken über alle drei Datensätze zusammen.
+%
+\begin{table}[htbp]
+  \centering
+  \caption{L2-Normverteilung der Float32-Embeddings. CV bezeichnet den Variationskoeffizienten $\sigma / \mu$.}
+  \label{tab:phase1_norms}
+  \begin{tabular}{lcccc}
+    \toprule
+    Datensatz & $\mu$ & $\sigma$ & Bereich & CV \\
+    \midrule
+    SciFact     & 1{,}000\,000 & $2{,}93 \times 10^{-8}$ & $[1{,}000\,000;\; 1{,}000\,000]$ & $2{,}93 \times 10^{-8}$ \\
+    FiQA        & 1{,}000\,000 & $2{,}96 \times 10^{-8}$ & $[1{,}000\,000;\; 1{,}000\,000]$ & $2{,}96 \times 10^{-8}$ \\
+    TREC-COVID  & 1{,}000\,000 & $3{,}03 \times 10^{-8}$ & $[1{,}000\,000;\; 1{,}000\,000]$ & $3{,}03 \times 10^{-8}$ \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+%
+Die Variationskoeffizienten von $\text{CV} \approx 3 \times 10^{-8}$ bestätigen, dass die Vektoren exakt auf der Einheitshypersphäre liegen.
+Die beobachteten Abweichungen liegen in der Größenordnung der Float32-Maschinengenauigkeit ($\epsilon_{\text{float32}} \approx 1{,}2 \times 10^{-7}$) und sind damit numerisches Rauschen, keine inhaltliche Variation.
+%
+\paragraph{Interpretation.}
+Dieses Ergebnis hat eine direkte Konsequenz für die Binarisierung.
+Da die Vorzeichenfunktion die Norminformation vollständig verwirft (vgl.\ Abschnitt~\ref{sec:methodik_phase1}), hängt der Informationsverlust davon ab, wie viel Information in der Norm kodiert ist.
+Bei perfekter Normierung ist der Informationsgehalt der Norm null.
+Die Binarisierung verliert damit ausschließlich die Magnitudeninformation \emph{innerhalb} jeder Dimension, nicht die Gesamt-Norminformation.
+Dies ist eine günstige Voraussetzung, die nicht für alle Embedding-Modelle gelten muss.
+%
+\subsection{Dimensionsstatistiken}
+%
+Tabelle~\ref{tab:phase1_dimstats} zeigt die aggregierten Dimensionsstatistiken.
+Die zugehörige Verteilung über alle 1024 Dimensionen ist in Abbildung~\ref{fig:dimension_distribution} dargestellt.
+%
+\begin{table}[htbp]
+  \centering
+  \caption{Dimensionsstatistiken über alle 1024 Dimensionen. Die Schwellwerte $|\text{skew}| > 1{,}0$ und $\text{kurtosis} > 3{,}0$ (Fisher-Kurtosis, Normalverteilung $= 0$) markieren problematische Dimensionen für Quantisierung.}
+  \label{tab:phase1_dimstats}
+  \begin{tabular}{lccccc}
+    \toprule
+    Datensatz & $\overline{|\text{skew}|}$ & $\max |\text{skew}|$ & $\overline{\text{kurt}}$ & $\max(\text{kurt})$ & $n_{\text{probl.}}$ \\
+    \midrule
+    SciFact     & 0{,}074 & 0{,}377 & 0{,}003 & 0{,}662 & 0 / 1024 \\
+    FiQA        & 0{,}081 & 0{,}471 & 0{,}044 & 0{,}665 & 0 / 1024 \\
+    TREC-COVID  & 0{,}085 & 0{,}366 & 0{,}022 & 0{,}539 & 0 / 1024 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+%
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=\textwidth]{dimension_distribution.pdf}
+  \caption{Verteilung der Schiefe und Kurtosis über alle 1024 Dimensionen für die drei Datensätze. Die gestrichelten Linien markieren die Schwellwerte $|\text{skew}| = 1{,}0$ und $\text{kurtosis} = 3{,}0$, ab denen Quantisierungsprobleme zu erwarten wären.}
+  \label{fig:dimension_distribution}
+\end{figure}
+%
+Die Ergebnisse sind über alle drei Datensätze bemerkenswert konsistent.
+Keine einzige der 3072 untersuchten Dimensionen ($3 \times 1024$) überschreitet die Schwellwerte für problematische Schiefe oder Kurtosis.
+Die maximale Schiefe liegt bei 0{,}471 (FiQA), also weniger als der Hälfte des Schwellwerts.
+Die maximale Kurtosis beträgt 0{,}665 (FiQA), was einer nur leicht leptokurtischen Verteilung entspricht, die weit entfernt von problematischem Heavy-Tail-Verhalten ist.
+%
+\paragraph{Interpretation.}
+Die nahezu symmetrischen Verteilungen um Null haben zwei konkrete Implikationen.
+%
+Erstens liegt der Vorzeichenschwellwert $x_i = 0$ der Binarisierung nahe am informationstheoretisch optimalen Punkt.
+Bei einer symmetrischen Verteilung teilt der Schwellwert~0 die Wahrscheinlichkeitsmasse annähernd in zwei gleich große Hälften, was die Entropie des resultierenden Bits maximiert.
+Die in der Methodik formulierte Erwartung, dass schiefe Dimensionen bei der Binarisierung mehr Fehler verursachen sollten, lässt sich hier nicht prüfen, da keine solchen Dimensionen existieren.
+Das Fehlen schiefer Dimensionen ist jedoch selbst ein Ergebnis: Es zeigt, dass \texttt{bge-large-en-v1.5} einen für Binarisierung günstigen Raum erzeugt.
+%
+Zweitens bedeutet die niedrige Kurtosis, dass keine Dimension Ausreißer aufweist, die bei uniformer Quantisierung mit wenigen Stufen (etwa 4~Stufen bei 2-Bit) zu großen Fehlern führen würden.
+Die uniforme Stufenverteilung von TurboQuant ist damit für diesen Raum gut geeignet.
+%
+Die Konsistenz über drei unterschiedliche Domänen (Naturwissenschaft, Finanz, Biomedizin) deutet darauf hin, dass diese Eigenschaften vom Modell und nicht vom Datensatz bestimmt werden.
+Dies ist plausibel, da das Training über diverse Korpora hinweg eine symmetrische Nutzung des Raums erzwingt.
+%
+\subsection{Intrinsische Dimensionalität}
+\label{sec:ergebnisse_intdim}
+%
+Tabelle~\ref{tab:phase1_intdim} stellt die Schätzungen der intrinsischen Dimensionalität gegenüber.
+Das zugehörige PCA-Varianzspektrum und die kumulative erklärte Varianz sind in den Abbildungen~\ref{fig:pca_variance_spectrum} und~\ref{fig:pca_cumulative_variance} dargestellt.
+%
+\begin{table}[htbp]
+  \centering
+  \caption{Intrinsische Dimensionalität: TwoNN (lokale Mannigfaltigkeitsstruktur) und PCA (globale lineare Dimensionalität, 95\% erklärte Varianz). Ergänzend die kumulative Varianz bei ausgewählten Komponentenzahlen.}
+  \label{tab:phase1_intdim}
+  \begin{tabular}{lccccc}
+    \toprule
+    Datensatz & TwoNN & PCA$_{95\%}$ & $V(50)$ & $V(100)$ & $V(256)$ \\
+    \midrule
+    SciFact     & 13{,}2 & 390 & 50{,}0\% & 65{,}2\% & 87{,}4\% \\
+    FiQA        & 22{,}1 & 395 & 52{,}7\% & 67{,}0\% & 87{,}8\% \\
+    TREC-COVID  & 11{,}1 & 417 & 50{,}0\% & 63{,}8\% & 85{,}4\% \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+%
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=\textwidth]{pca_variance_spectrum.pdf}
+  \caption{PCA-Varianzspektrum: Erklärte Varianz pro Hauptkomponente (absteigende Reihenfolge). Der schnelle Abfall der ersten Komponenten gefolgt von einem langen, flachen Schwanz zeigt die typische Varianzkonzentration in hochdimensionalen Embedding-Räumen.}
+  \label{fig:pca_variance_spectrum}
+\end{figure}
+%
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=\textwidth]{pca_cumulative_variance.pdf}
+  \caption{Kumulative erklärte Varianz als Funktion der Komponentenzahl. Die horizontale Linie markiert 95\%. Die vertikalen Markierungen zeigen die evaluierten PCA-Dimensionen $d \in \{64, 128, 256, 384, 512, 768, 1024\}$.}
+  \label{fig:pca_cumulative_variance}
+\end{figure}
+%
+\paragraph{Diskrepanz zwischen lokaler und globaler Schätzung.}
+Die auffälligste Beobachtung ist die starke Divergenz zwischen den beiden Schätzern.
+TwoNN schätzt die lokale Mannigfaltigkeitsdimension auf 11--22, während PCA~390--417 Komponenten für 95\% Varianz benötigt.
+Diese Diskrepanz beträgt mehr als eine Größenordnung und ist kein Artefakt, sondern inhaltlich interpretierbar.
+%
+TwoNN misst die lokale Freiheitsgrade der Datenmannigfaltigkeit: Wie viele unabhängige Richtungen existieren in der unmittelbaren Umgebung eines Punktes?
+Der niedrige Wert (11--22) zeigt, dass die Dokumente lokal auf einer niedrigdimensionalen Mannigfaltigkeit liegen.
+Semantisch ähnliche Dokumente unterscheiden sich nur entlang weniger Achsen.
+%
+PCA misst hingegen die globale lineare Dimensionalität: Wie viele orthogonale Richtungen sind nötig, um die Gesamtstreuung aller Punkte zu erfassen?
+Der hohe Wert (390--417) zeigt, dass die Mannigfaltigkeit zwar lokal niedrigdimensional ist, aber global viele verschiedene Richtungen einnimmt.
+Dies entspricht dem Bild einer gekrümmten Mannigfaltigkeit, die zwar lokal flach ist, aber in einen hochdimensionalen Raum eingebettet ist und dort viele verschiedene Orientierungen annimmt.
+%
+\paragraph{Implikationen für die Dimensionsreduktion.}
+Aus den PCA-Ergebnissen lassen sich quantitative Vorhersagen für die nachfolgenden Phasen ableiten:
+\begin{itemize}
+  \item \textbf{$d = 384$:} Mit 384 Komponenten werden je nach Datensatz 93--94\% der Varianz erhalten (interpoliert aus den Werten für $V(256)$ und $V(\text{PCA}_{95\%})$).
+Eine moderate Qualitätsreduktion ist zu erwarten, aber keine katastrophale.
+  \item \textbf{$d = 256$:} Bei 256 Komponenten verbleiben 85--88\% der Varianz.
+Hier beginnt der Bereich, in dem substantielle Information verloren geht.
+  \item \textbf{$d = 64$:} Bei 64 Komponenten verbleiben nur ca. 40\% der Varianz.
+Ein massiver Qualitätsverlust ist zu erwarten.
+\end{itemize}
+%
+\paragraph{Implikationen für die Quantisierung.}
+Die niedrige lokale Dimensionalität (TwoNN $\approx$ 11--22) hat eine weitere Konsequenz.
+Sie bedeutet, dass die lokale Nachbarschaftsstruktur, die für Retrieval entscheidend ist, durch relativ wenige effektive Dimensionen bestimmt wird.
+Quantisierung, die jede Dimension unabhängig behandelt, kann daher einen substantiellen Teil der Bitbreite auf redundante Dimensionen verwenden, ohne die relevante lokale Struktur zu beschädigen.
+Dies legt nahe, dass selbst aggressive Quantisierung (2-Bit, 1-Bit) die \emph{lokale} Nachbarschaftsstruktur besser erhalten könnte als die \emph{globale} Distanzstruktur, da erstere von weniger effektiven Dimensionen abhängt.
+Diese Hypothese wird in Phase~3 empirisch geprüft.
+%
+\subsection{Zusammenfassung und Vorhersagen}
+\label{sec:ergebnisse_phase1_vorhersagen}
+%
+Die Charakterisierung ergibt ein konsistentes Bild: Der Embedding-Raum von \texttt{bge-large-en-v1.5} besitzt drei Eigenschaften, die Quantisierung systematisch begünstigen:
+\begin{enumerate}
+  \item \textbf{Perfekte Normierung} -- die Binarisierung verliert keine Norminformation.
+  \item \textbf{Symmetrische, leicht-schwänzige Dimensionen} -- der Vorzeichenschwellwert liegt optimal, und uniforme Quantisierung verursacht keine Ausreißer-induzierten Fehler.
+  \item \textbf{Hohe Redundanz} -- die intrinsische Dimensionalität liegt weit unter der nominalen, sodass Kompression über beide Achsen (Bittiefe und Dimensionszahl) möglich ist.
+\end{enumerate}
+%
+Daraus ergeben sich spezifische, testbare Vorhersagen für die nachfolgenden Phasen:
+\begin{itemize}
+  \item Selbst die naive Binarisierung sollte aufgrund der günstigen Raumeigenschaften eine nicht-triviale Distanz- und Nachbarschaftserhaltung zeigen.
+  \item Der Vorteil von TurboQuant gegenüber naiver Quantisierung sollte moderat ausfallen, da die Varianzumverteilung durch Rotation in einem bereits gleichmäßig genutzten Raum weniger Verbesserungspotenzial hat.
+  \item PCA-Reduktion auf $d \geq 384$ sollte bei allen Quantisierungsstufen nur marginale Qualitätsverluste verursachen.
+  \item Die stärksten Qualitätseinbrüche werden bei $d \leq 128$ erwartet, wo mehr als 30\% der Varianz verloren gehen.
+\end{itemize}
+%
+Ob diese Vorhersagen zutreffen, wird in den Phasen~2 bis~4 empirisch überprüft.
