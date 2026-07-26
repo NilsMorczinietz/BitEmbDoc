@@ -176,7 +176,7 @@ Diese Vorhersagen werden in den späteren Phasen empirisch überprüft.
 %
 \subsection{Normverteilung}
 %
-Für alle Vektoren wird die L2-Norm $\|\mathbf{x}\|_2$ berechnet und als Histogramm dargestellt.
+Für alle Vektoren wird die L2-Norm $\|\mathbf{x}\|_2$ berechnet und deskriptiv zusammengefasst (Mittelwert, Standardabweichung, Variationskoeffizient, Bereich).
 Die Normverteilung beantwortet eine konkrete Frage, nämlich ob die Vektoren annähernd auf einer Hypersphäre liegen oder ob signifikante Normunterschiede existieren.
 %
 Diese Analyse ist für die Binarisierung direkt relevant.
@@ -196,6 +196,7 @@ Hohe Kurtosis deutet auf Ausreißer hin, die bei Quantisierung auf wenige Stufen
 \end{itemize}
 %
 Diese Kennzahlen sind nicht Selbstzweck, sondern liefern spezifische Vorhersagen.
+Als Schwellwerte für problematische Dimensionen werden $|\text{skew}| > 1{,}0$ und $\text{kurtosis} > 3{,}0$ (Fisher-Kurtosis, bei der die Normalverteilung den Wert~0 annimmt) festgelegt.
 Dimensionen mit hoher Schiefe sollten bei der Binarisierung mehr Fehler verursachen als symmetrische Dimensionen.
 Dimensionen mit hoher Kurtosis sollten bei TurboQuant (2~Bit, also 4 Stufen) mehr Quantisierungsfehler zeigen.
 Ob diese Vorhersagen zutreffen, wird in Phase~2 überprüft.
