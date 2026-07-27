@@ -230,36 +230,62 @@ Für normierte Eingabevektoren sind Cosine-Distanz und euklidische Distanz ohneh
 Die Stichprobengröße von 10\,000 Paaren ist so gewählt, dass das 95\%-Konfidenzintervall für den Pearson-Korrelationskoeffizienten bei $r = 0{,}9$ eine Breite von weniger als $\pm 0{,}005$ besitzt.
 Damit sind selbst kleine Unterschiede zwischen den Verfahren statistisch auflösbar.
 %
-Die Distanzerhaltung wird über zwei Korrelationsmaße quantifiziert.
+Die Distanzerhaltung wird über vier Metriken quantifiziert, die zwei komplementäre Perspektiven abdecken: relative Strukturerhaltung (Pearson, Spearman) und absolute Verzerrung (MAE, RMSE).
 %
-\paragraph{Pearson~$r$.}
-Der Pearson-Korrelationskoeffizient misst den linearen Zusammenhang zwischen Float-Distanz und komprimierter Distanz.
-Ein hoher Wert nahe~1 bedeutet, dass die Quantisierung die Distanzen lediglich linear transformiert, ohne die geometrische Struktur zu verzerren.
+\paragraph{Pearson~$r$ -- linearer Zusammenhang.}
+Für jedes der 10\,000 Paare liegen zwei Distanzwerte vor: die Float-Distanz $x_i$ und die komprimierte Distanz $y_i$.
+Der Pearson-Korrelationskoeffizient berechnet sich als:
+\begin{equation}
+  r = \frac{\sum_{i=1}^{n}(x_i - \bar{x})(y_i - \bar{y})}{\sqrt{\sum_{i=1}^{n}(x_i - \bar{x})^2} \cdot \sqrt{\sum_{i=1}^{n}(y_i - \bar{y})^2}}
+  \label{eq:pearson}
+\end{equation}
 %
-\paragraph{Spearman~$\rho$.}
-Der Spearman-Rangkorrelationskoeffizient misst, ob die Rangordnung der Distanzen erhalten bleibt.
-Für Retrieval-Anwendungen ist dieses Maß entscheidender als Pearson~$r$ (vgl.\ Abschnitt~\ref{sec:grundlagen_quantisierung}, Rangerhaltung).
+Dabei ist $\bar{x}$ der Mittelwert der Float-Distanzen und $\bar{y}$ der Mittelwert der komprimierten Distanzen über alle $n = 10\,000$ Paare.
+Der Wert liegt zwischen $-1$ und $+1$.
+Ein $r = 0{,}975$ bedeutet: Wenn man die Float-Distanz kennt, kann man die komprimierte Distanz bis auf geringe Streuung durch eine Gerade vorhersagen.
+Quantitativ erklärt $r^2 = 0{,}95$ der komprimierten Distanzvarianz durch die Float-Distanz, 5\,\% sind Quantisierungsrauschen.
+Geometrisch entspricht $r = 1$ einer perfekten Geraden in einem Streudiagramm (Float-Distanz auf der x-Achse, komprimierte Distanz auf der y-Achse); mit sinkendem $r$ wird die Punktwolke breiter.
+%
+\paragraph{Spearman~$\rho$ -- Rangerhaltung.}
+Spearman~$\rho$ berechnet sich identisch zu Pearson~$r$, operiert aber nicht auf den Distanzwerten selbst, sondern auf deren \emph{Rängen}.
+Zuerst werden die 10\,000 Float-Distanzen aufsteigend sortiert und durch ihre Rangposition ersetzt ($1, 2, \ldots, n$); dasselbe geschieht mit den komprimierten Distanzen.
+Anschließend wird der Pearson-Koeffizient auf diesen Rängen berechnet.
+%
+Ein $\rho = 0{,}97$ bedeutet: Wenn Paar~A im Float-Raum näher ist als Paar~B, dann ist es mit hoher Wahrscheinlichkeit auch im komprimierten Raum näher.
+Die genauen Abstandswerte können dabei beliebig verzerrt sein -- solange die \emph{Reihenfolge} stimmt, bleibt $\rho$ hoch.
+Für Retrieval, das Ergebnisse nach Ähnlichkeit sortiert, ist Spearman~$\rho$ daher die relevantere Metrik (vgl.\ Abschnitt~\ref{sec:grundlagen_quantisierung}, Rangerhaltung).
 %
 Die Kombination beider Maße erlaubt eine differenzierte Aussage.
 Sind beide hoch, ist die Quantisierung strukturtreu.
 Ist nur Spearman hoch, eignet sich die Repräsentation für Ranking, aber nicht für distanzbasierte Schwellwertentscheidungen.
 Sind beide niedrig, ist die semantische Struktur substantiell beschädigt.
 %
-\subsection{Distortion}
+\subsection{Absolute Verzerrung (Distortion)}
 %
-Zusätzlich zur Korrelation wird die absolute Verzerrung gemessen.
-Für jedes der 10\,000 Paare wird der Fehler $|d_\text{float} - d_\text{quantized}|$ auf den bereits normierten Distanzen berechnet.
+Zusätzlich zur relativen Struktur wird die absolute Verzerrung gemessen.
+Für jedes Paar~$i$ wird der Fehler $e_i = |x_i - y_i|$ auf den bereits auf $[0, 1]$ normierten Distanzen berechnet.
+Daraus ergeben sich zwei Aggregatmaße:
 %
-Als Aggregatmaße dienen:
-\begin{itemize}
-  \item \textbf{MAE} (Mean Absolute Error), die durchschnittliche Abweichung, robust gegenüber Ausreißern.
-  \item \textbf{RMSE} (Root Mean Squared Error), der große Abweichungen stärker gewichtet und zeigt, ob einzelne Paare besonders stark verzerrt werden.
-\end{itemize}
+\begin{equation}
+  \text{MAE} = \frac{1}{n}\sum_{i=1}^{n} |x_i - y_i|
+  \label{eq:mae}
+\end{equation}
+%
+\begin{equation}
+  \text{RMSE} = \sqrt{\frac{1}{n}\sum_{i=1}^{n} (x_i - y_i)^2}
+  \label{eq:rmse}
+\end{equation}
+%
+MAE gibt die durchschnittliche absolute Abweichung an.
+Ein MAE von~0{,}05 bedeutet: Die komprimierte Distanz weicht im Mittel um 5 Prozentpunkte auf der normierten $[0, 1]$-Skala vom Float-Wert ab.
+RMSE gewichtet große Fehler stärker, weil die Quadrierung extreme Abweichungen überproportional bestraft.
+Wenn $\text{RMSE} \approx \text{MAE}$, sind die Fehler gleichmäßig verteilt.
+Wenn $\text{RMSE} \gg \text{MAE}$, gibt es einzelne Paare mit besonders hoher Verzerrung.
 %
 Während Pearson und Spearman die \emph{relative} Struktur bewerten, quantifizieren MAE und RMSE die \emph{absolute} Verzerrung.
 Beide Perspektiven sind notwendig.
 Ein Verfahren mit hoher Korrelation, aber hohem MAE transformiert die Distanzen zwar monoton korrekt, verschiebt aber das gesamte Distanzniveau.
-Für Schwellwert-basierte Systeme wäre dies problematisch.
+Für Schwellwert-basierte Systeme (z.\,B.\ ``zeige nur Ergebnisse mit Ähnlichkeit $> 0{,}8$'') wäre dies problematisch.
 %
 \section{Phase~3: Nachbarschaftserhaltung}
 \label{sec:methodik_phase3}
