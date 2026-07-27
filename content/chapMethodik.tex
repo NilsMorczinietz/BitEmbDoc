@@ -23,6 +23,8 @@ Diese Reihenfolge ist methodisch notwendig.
 Würde direkt mit der Retrieval-Evaluation begonnen, ließe sich zwar feststellen, \emph{dass} ein Verfahren schlechter abschneidet, aber nicht \emph{warum}.
 Die vorgeschaltete Raumanalyse ermöglicht es, Qualitätsverluste kausal auf geometrische Eigenschaften des Ausgangsraums zurückzuführen.
 %
+Der vollständige Quellcode des Experiments, einschließlich aller Analyseskripte, Quantisierungsverfahren und Evaluationspipelines, ist öffentlich verfügbar.\footnote{\url{https://github.com/JeskoFoerster/BitEmb}}
+%
 \section{Datensatz}
 %
 Als Evaluationsgrundlage dient der BEIR-Benchmark \cite{thakur_2021_beir}.
@@ -55,8 +57,6 @@ Die Wahl fällt auf \texttt{bge-large-en-v1.5} aus folgenden Gründen:
 Damit ist der Ausgangsraum hochdimensional genug für eine aussagekräftige Quantisierungsanalyse, bleibt aber für exakte Brute-Force-Messungen auf kontrollierten BEIR-Ausschnitten praktikabel.
   \item Als Open-Source-Modell ermöglicht es vollständige Reproduzierbarkeit.
 \end{itemize}
-%
-Der vollständige Quellcode des Experiments, einschließlich aller Analyseskripte, Quantisierungsverfahren und Evaluationspipelines, ist öffentlich verfügbar.\footnote{\url{https://github.com/JeskoFoerster/BitEmb}}
 %
 Eine naheliegende Alternative wäre \texttt{nomic-embed-text-v1.5} \cite{nussbaum_2024_nomic}, das durch Matryoshka-Training bereits auf variable Dimensionsgrößen und binäre Ausgabe optimiert ist.
 Genau diese Optimierung macht es für die vorliegende Untersuchung jedoch weniger geeignet.
