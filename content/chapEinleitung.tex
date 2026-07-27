@@ -39,6 +39,7 @@ Bestehende Benchmarks messen zwar Retrieval-Metriken bei verschiedenen Kompressi
 Damit bleibt unklar, \emph{warum} bestimmte Verfahren auf bestimmten Daten besser oder schlechter funktionieren.
 %
 \section{Forschungsfrage und Zielsetzung}
+\label{sec:forschungsfrage}
 %
 Die vorliegende Arbeit untersucht die zentrale Frage:
 \emph{Wie beeinflusst die Quantisierung von Embedding-Vektoren die Retrieval-Qualität und den Speicherverbrauch eines vektorbasierten Suchsystems, und welche semantischen Eigenschaften des Float-Raums bleiben unter Kompression erhalten beziehungsweise gehen verloren?}
@@ -55,21 +56,12 @@ Konkret werden folgende Teilfragen adressiert:
 %
 \section{Methodischer Ansatz}
 %
-Zur Beantwortung dieser Fragen wird ein kontrolliertes Experiment in sechs aufeinander aufbauenden Phasen durchgeführt.
+Zur Beantwortung dieser Fragen wird ein kontrolliertes Experiment in sechs aufeinander aufbauenden Phasen durchgeführt (vgl.\ Kapitel~3).
 Den Ausgangspunkt bildet ein Float32-Referenzraum, der mit dem Modell \texttt{bge-large-en-v1.5} \cite{xiao_2023_bge} auf drei heterogenen BEIR-Datensätzen \cite{thakur_2021_beir} erzeugt wird.
 Dieser Referenzraum wird nachträglich mit verschiedenen Verfahren komprimiert: naive Binarisierung (1~Bit), rotationsbasierte Quantisierung nach dem TurboQuant-Prinzip (1~Bit bis 8~Bit) sowie PCA-basierte Dimensionsreduktion.
-Durch den systematischen Vergleich naiver und rotierter Varianten bei gleicher Bitstiefe lassen sich die Effekte der Bitreduktion und der Rotation separat quantifizieren.
 \par
-Die Analyse folgt einer Kausalkette von der Raumgeometrie bis zur praktischen Anwendung.
-Zunächst wird der Float-Raum statistisch charakterisiert, um Erwartungen an den Quantisierungsverlust zu formulieren.
-Anschließend wird gemessen, wie gut die komprimierten Repräsentationen Distanzen und lokale Nachbarschaften erhalten.
-Darauf aufbauend wird die tatsächliche Retrieval-Qualität mit NDCG@10, Recall und MRR quantifiziert.
-In einer Effizienzanalyse werden die Speicher- und Laufzeitvorteile den gemessenen Qualitätsverlusten gegenübergestellt.
-Abschließend werden die Retrieval-Systeme als MCP-Server bereitgestellt und in einem agentenbasierten Szenario evaluiert.
-\par
-Die schrittweise Analyse ist methodisch notwendig.
-Würde direkt mit der Retrieval-Evaluation begonnen, ließe sich feststellen, \emph{dass} ein Verfahren schlechter abschneidet, aber nicht \emph{warum}.
-Die vorgeschaltete Raumanalyse ermöglicht es, Qualitätsverluste kausal auf geometrische Eigenschaften des Ausgangsraums zurückzuführen und daraus domänenübergreifende Empfehlungen für den praktischen Einsatz quantisierter Embeddings abzuleiten.
+Die Analyse folgt einer Kausalkette von der Raumgeometrie bis zur praktischen Anwendung: Zunächst wird der Float-Raum charakterisiert, dann wird die Erhaltung von Distanzen und Nachbarschaften gemessen, darauf aufbauend die Retrieval-Qualität quantifiziert, und abschließend werden Effizienz und Praxistauglichkeit evaluiert.
+Dieser schrittweise Aufbau ist methodisch notwendig, da er es ermöglicht, Qualitätsverluste kausal auf geometrische Eigenschaften des Ausgangsraums zurückzuführen.
 %
 \section{Aufbau der Arbeit}
 %

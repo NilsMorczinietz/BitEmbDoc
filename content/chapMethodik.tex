@@ -1,15 +1,8 @@
 \chapter{Methodik}
 %
-\section{Forschungsfrage und experimenteller Rahmen}
+\section{Experimenteller Rahmen}
 %
-Die zentrale Forschungsfrage dieser Arbeit lautet:
-Welche semantischen Eigenschaften eines Float-Embedding-Raums bleiben unter Quantisierung erhalten, welche gehen verloren, und wie wirkt sich dieser Verlust auf die Retrieval-Qualität aus?
-%
-Diese Formulierung ist bewusst enger gefasst als eine allgemeine Frage nach der Nützlichkeit von Bit-Embeddings.
-Sie verlangt nicht nur die Messung eines Qualitätsverlusts, sondern auch dessen Erklärung aus den Eigenschaften des Ausgangsraums.
-Damit geht die Arbeit über einen reinen Benchmark-Vergleich hinaus und liefert ein Verständnis dafür, \emph{warum} bestimmte Kompressionsverfahren auf bestimmten Daten besser oder schlechter funktionieren.
-%
-Um diese Frage empirisch zu beantworten, wird ein kontrolliertes Experiment durchgeführt, das sich in sechs Phasen gliedert:
+Zur Beantwortung der in Abschnitt~\ref{sec:forschungsfrage} formulierten Forschungsfrage wird ein kontrolliertes Experiment durchgeführt, das sich in sechs Phasen gliedert:
 \begin{enumerate}
   \item \textbf{Charakterisierung:} Der Float-Raum wird statistisch und geometrisch analysiert, um Erwartungen an den Quantisierungsverlust zu formulieren.
   \item \textbf{Kompression:} Aus dem Float-Raum werden komprimierte Repräsentationen abgeleitet, variiert entlang zweier Achsen (Bittiefe und Dimensionszahl).
