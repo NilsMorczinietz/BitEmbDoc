@@ -9,7 +9,7 @@ Zur Beantwortung der in Abschnitt~\ref{sec:forschungsfrage} formulierten Forschu
   \item \textbf{Strukturanalyse:} Die Fähigkeit der komprimierten Räume zur Distanz- und Nachbarschaftserhaltung wird gemessen.
   \item \textbf{Retrieval-Evaluation:} Die tatsächliche Auswirkung auf die Suchqualität wird mit etablierten Information-Retrieval-Metriken quantifiziert.
   \item \textbf{Praktische Evaluation:} Speicherbedarf und Suchgeschwindigkeit werden gemessen, um Qualität und Effizienz gegeneinander abzuwägen.
-  \item \textbf{Anwendungsvalidierung:} Die Retrieval-Systeme werden als MCP-Server bereitgestellt und in einem agentenbasierten Szenario evaluiert, um die praktische Übertragbarkeit der Benchmark-Ergebnisse zu prüfen.
+  \item \textbf{Anwendungs- und Skalierungsanalyse:} Die gemessenen Qualitäts- und Effizienzwerte werden auf konkrete Einsatzszenarien, Indexgrößen und Betriebskosten übertragen.
 \end{enumerate}
 %
 Diese Reihenfolge ist methodisch notwendig.
@@ -463,71 +463,70 @@ Ergänzend zu Speicher und Laufzeit werden Trade-off-Metriken berechnet, die Ret
 Dazu gehören die Relative Quality-to-Space Ratio (RQSR), der Compression-Quality-Score $CQ_1$ und die Quality Elasticity of Storage (QES).
 Diese Metriken dienen nicht als Ersatz für NDCG@10, sondern als zusätzliche Entscheidungshilfe, um Konfigurationen mit ähnlicher Qualität nach ihrem Speicherbedarf zu vergleichen.
 %
-\section{Phase~6: Anwendungsvalidierung über MCP-Server}
+\section{Phase~6: Praktische Anwendungsfall- und Skalierungsanalyse}
 \label{sec:methodik_phase6}
 %
-Die Phasen~1 bis~5 evaluieren die Kompressionsverfahren unter kontrollierten Laborbedingungen mit bekannten Datensätzen, exakter Suche und isolierter Messung einzelner Größen.
-Diese Kontrolle ist für die wissenschaftliche Aussagekraft notwendig, schließt aber eine Frage aus, die für die praktische Relevanz der Ergebnisse zentral ist.
-Es bleibt offen, ob sich die gemessene Retrieval-Qualität auf ein reales Anwendungsszenario überträgt, in dem zusätzliche Faktoren wie Netzwerklatenz, Serialisierung und agentengesteuerte Query-Formulierung hinzukommen.
-%
-Phase~6 adressiert diese Frage durch eine Anwendungsvalidierung.
-Ausgewählte in den vorherigen Phasen untersuchte Retrieval-Backends werden als MCP-Server implementiert und von einem LLM-Agenten über das Model Context Protocol (vgl.
-Kapitel~\ref{sec:grundlagen_mcp}) als Retrieval-Werkzeug genutzt.
-Die Auswahl orientiert sich an der aktuellen Repräsentationsmatrix und umfasst mindestens eine Float-Referenz, moderate TurboQuant-Varianten sowie aggressive 1-Bit-Varianten.
+Die Phasen~1 bis~5 evaluieren die Quantisierungsverfahren unter kontrollierten Bedingungen: Distanzverzerrung, Nachbarschaftserhaltung, Retrieval-Qualität, Speicherbedarf und Laufzeit werden isoliert betrachtet.
+Phase~6 übersetzt diese Laborergebnisse in konkrete Anwendungsszenarien.
+Im Zentrum steht nicht mehr die Frage, ob eine Repräsentation geometrisch oder retrievalbezogen funktioniert, sondern unter welchen praktischen Speicher- und Kostenbudgets sie sinnvoll eingesetzt werden kann.
 %
 \subsection{Ziel und Abgrenzung}
 %
-Das Ziel von Phase~6 ist nicht die Entwicklung eines produktionsreifen Systems, sondern die Beantwortung einer spezifischen Validierungsfrage.
-Es soll geprüft werden, ob die unter Laborbedingungen gemessenen Qualitäts- und Latenzunterschiede zwischen den Repräsentationsräumen mit dem beobachtbaren Verhalten in einer realistischen Werkzeugkette übereinstimmen.
+Phase~6 verfolgt drei Ziele.
+Erstens wird der Speicherbedarf ausgewählter TurboQuant-Konfigurationen auf realistische Indexgrößen hochgerechnet.
+Zweitens werden diese Konfigurationen Anwendungsszenarien zugeordnet, die unterschiedliche Anforderungen an Speicher, Qualität und Betriebskosten stellen.
+Drittens wird für das mobile Szenario eine feinere Skalierung unterhalb von 10~Millionen Vektoren betrachtet, da dort Speicherbudgets im Bereich weniger MiB bis einiger hundert MiB praktisch entscheidend sind.
 %
-Konkret prüft Phase~6 zwei Hypothesen:
-\begin{enumerate}
-  \item \textbf{Qualitätsübertragung:} Die in Phase~4 gemessenen NDCG-Unterschiede zwischen den Repräsentationsräumen spiegeln sich in der Antwortqualität des Agenten wider.
-Ein Retrieval-Backend, das im BEIR-Benchmark signifikant schlechter abschneidet, liefert dem Agenten schlechtere Kontextdokumente, was sich in der Antwortqualität niederschlägt.
-  \item \textbf{Latenzübertragung:} Die in Phase~5 gemessenen Geschwindigkeitsunterschiede manifestieren sich als wahrnehmbarer Unterschied in der End-to-End-Antwortzeit des Agenten.
-Da Phase~5 zeigt, dass Speicherkompression im NumPy-Pfad nicht automatisch schnellere Top-$k$-Suche bedeutet, wird der Latenzeffekt empirisch geprüft und nicht vorab zugunsten binärer Repräsentationen angenommen.
-\end{enumerate}
+Die Analyse ist bewusst keine neue Retrieval-Evaluation.
+Die Qualitätswerte werden aus Phase~4 übernommen, insbesondere NDCG@10 auf SciFact relativ zur Float32-Referenz bei $d = 1024$.
+Der Speicherbedarf wird aus Phase~5 übernommen und linear auf größere Indexgrößen übertragen.
+Die Extrapolation bezieht sich ausschließlich auf die komprimierte Vektorrepräsentation.
+Metadaten, Textchunks, ANN-Zusatzstrukturen, Betriebssystem-Overhead und Laufzeitpuffer werden nicht eingerechnet.
+Damit beschreibt Phase~6 eine untere, aber kontrolliert vergleichbare Speichergrenze.
 %
-Die Abgrenzung ist wichtig.
-Phase~6 evaluiert nicht den MCP-Server als Software-Artefakt (Architektur, Skalierbarkeit, Fehlerbehandlung), sondern nutzt ihn als Mittel, um die Generalisierbarkeit der wissenschaftlichen Ergebnisse aus den vorherigen Phasen zu prüfen.
+Naive Quantisierung wird in Phase~6 nicht als eigene Anwendungslinie weitergeführt.
+Bei gleicher Bittiefe und gleicher Dimensionszahl ist ihr Speicherbedarf identisch zu TurboQuant; Unterschiede liegen primär in der Retrieval-Qualität.
+Da Phase~6 Speicher- und Kostenskalierung bewertet und die vorherigen Phasen zeigen, dass TurboQuant insbesondere bei niedrigen Bittiefen und Dimensionsreduktion robuster ist, wird die praktische Empfehlung auf TurboQuant beschränkt.
 %
-\subsection{Architektur}
+\subsection{Szenarioauswahl}
 %
-Die Implementierung folgt dem minimalen Aufbau, der notwendig ist, um die Validierungsfrage zu beantworten:
+Aus den Ergebnissen der Phasen~4 und~5 werden drei repräsentative Einsatzszenarien abgeleitet:
 \begin{itemize}
-  \item Mehrere identische MCP-Server, die sich ausschließlich im Retrieval-Backend unterscheiden, etwa Float/Cosine, ausgewählte TurboQuant-Varianten und 1-Bit-Hamming.
-  \item Jeder Server exponiert ein einzelnes Tool \texttt{search}, das eine natürlichsprachliche Query entgegennimmt und die Top-$k$ Dokumente mit Relevanzscores zurückgibt.
-  \item Ein LLM-Agent, der über den MCP-Client auf das jeweilige Retrieval-Tool zugreift und auf Basis der zurückgegebenen Dokumente eine Antwort generiert.
+  \item \textbf{Edge/Mobile:} minimale Speichernutzung für lokale Suche auf Smartphones, Laptops oder im Browser. Als aggressive Konfiguration wird \texttt{tq\_1bit} bei $d = 768$ verwendet.
+  \item \textbf{Business Sweet Spot:} kostenoptimierte Cloud-Suche mit sehr geringem Qualitätsverlust. Hier wird \texttt{tq\_2bit} bei $d = 1024$ betrachtet.
+  \item \textbf{Enterprise Precision:} hohe Qualität bei weiterhin deutlicher Speicherreduktion. Hier wird \texttt{tq\_4bit} bei $d = 1024$ betrachtet.
 \end{itemize}
 %
-Durch die identische Schnittstelle ist sichergestellt, dass Unterschiede im Agentenverhalten ausschließlich auf das Retrieval-Backend zurückführbar sind.
-Der Agent, das Prompt-Template und die Dokumentenbasis bleiben über alle ausgewählten Varianten konstant.
+Diese Szenarien sind keine neuen Algorithmen, sondern Entscheidungspunkte auf der empirisch bestimmten Qualitäts-Speicher-Kurve.
+Die Float32-Repräsentation bei $d = 1024$ dient als Referenz.
 %
-\subsection{Evaluationsprotokoll}
+\subsection{Skalierungsrechnung}
 %
-Die Evaluation verwendet eine Teilmenge der BEIR-Queries, für die in Phase~4 bereits Retrieval-Metriken vorliegen.
-Für jede Query wird der Agent mit jedem ausgewählten Backend ausgeführt.
-Gemessen werden:
-\begin{itemize}
-  \item \textbf{End-to-End-Latenz:} Die Zeit vom Absenden der Nutzeranfrage bis zur vollständigen Agentenantwort, aufgeschlüsselt in Retrieval-Latenz (Tool-Call) und Generierungslatenz.
-  \item \textbf{Retrieval-Übereinstimmung:} Der Overlap zwischen den vom MCP-Server zurückgegebenen Dokumenten und den Top-$k$-Ergebnissen der exakten Suche aus Phase~4.
-Dieser Wert quantifiziert, ob die MCP-Integration selbst (Serialisierung, Query-Weiterleitung) die Ergebnisse verändert.
-  \item \textbf{Antwortqualität:} Bewertet wird, ob der Agent auf Basis der zurückgegebenen Dokumente korrekte und vollständige Antworten generiert.
-Eine automatisierte Bewertung über LLM-as-Judge \cite{zheng_2023_llmjudge} ergänzt die manuelle Stichprobe.
-\end{itemize}
+Für jede Konfiguration wird zunächst der Speicherbedarf pro Vektor bestimmt.
+Für eine Indexgröße $N$ ergibt sich der reine Vektorspeicher zu
+\begin{equation}
+  M(N) = \frac{N \cdot b}{1024^3},
+\end{equation}
 %
-\subsection{Erwartete Ergebnisse}
+wobei $b$ die Anzahl der Bytes pro Vektor bezeichnet und $M(N)$ in GiB angegeben wird.
+Für kleinere mobile Korpora wird analog in MiB berichtet.
 %
-Aus den Ergebnissen der Phasen~4 und~5 lassen sich Erwartungen ableiten.
-Die Retrieval-Übereinstimmung sollte nahe 1{,}0 liegen, da der MCP-Server lediglich eine Schnittstelle um dieselbe Suchlogik legt.
-Abweichungen würden auf Implementierungsfehler oder unerwartete Effekte der Query-Transformation durch den Agenten hindeuten.
-Letzteres ist der methodisch interessanteste Fall: Der Agent formuliert Queries nicht notwendigerweise identisch zur BEIR-Vorlage, sondern kann sie umformulieren, verkürzen oder erweitern.
-Falls solche Reformulierungen die Qualitätsunterschiede zwischen den Backends verstärken oder abschwächen, liefert dies Erkenntnisse darüber, wie robust die Quantisierung gegenüber Query-Variabilität ist.
-Die Latenzdifferenz zwischen den Backends wird anhand derselben kontrollierten Retrieval-Logik gemessen.
-Aufgrund der Phase-5-Ergebnisse wird insbesondere geprüft, ob der im Labor beobachtete NumPy-Top-$k$-Nachteil der 1-Bit-Variante in der End-to-End-Werkzeugkette sichtbar bleibt oder durch andere Latenzanteile überdeckt wird.
-Ob dieser Unterschied im Kontext der deutlich höheren LLM-Generierungslatenz praktisch relevant ist, wird quantifiziert.
-Falls eine stark komprimierte 1-Bit-Variante bei bestimmten Queries schlechtere Dokumente liefert (gemäß Phase~4), sollte sich dies in der Antwortqualität niederschlagen.
-Damit ließe sich die kausale Kette von Quantisierungsverlust über Retrieval-Degradation bis zur Endnutzer-Auswirkung empirisch schließen.
+Die Hauptszenarien werden auf $N = 100\,000$, $N = 1\,000\,000$ und $N = 10\,000\,000$ Vektoren skaliert.
+Für das mobile Szenario wird zusätzlich die feinere Folge
+\[
+  N \in \{10\,000, 50\,000, 100\,000, 250\,000, 500\,000, 1\,000\,000, 5\,000\,000\}
+\]
+%
+betrachtet.
+Diese Größenordnung deckt typische lokale Bestände ab: App-Hilfen, persönliche Dokumente, kuratierte Wissenssammlungen oder Teilindizes größerer Systeme.
+%
+\subsection{Kostenmodell}
+%
+Für Cloud-Szenarien wird der Speicherbedarf auf grobe AWS-EC2-Instanzklassen abgebildet.
+Die Kostenrechnung ist als betriebswirtschaftliche Größenordnung zu verstehen, nicht als exakter Beschaffungsplan.
+Sie verwendet On-Demand-Preise für typische Instanzen mit ausreichendem Arbeitsspeicher.
+Die Zuordnung lautet: Float32 bei 10~Millionen Vektoren benötigt eine speicherstärkere Instanzklasse mit 64~GiB RAM, \texttt{tq\_4bit} passt in eine 8-GiB-Instanz, und \texttt{tq\_2bit} passt in eine 4-GiB-Instanz.
+Das Edge/Mobile-Szenario wird nicht als Cloud-Kostenfall modelliert, weil der Index lokal betrieben wird.
 %
 \section{Synthese und Interpretation}
 %
@@ -538,7 +537,7 @@ Konkret werden vier Leitfragen beantwortet:
   \item \textbf{Was bleibt erhalten?} Welche Aspekte der semantischen Struktur (globale Distanzen, lokale Nachbarschaften, Cluster) überleben die Quantisierung intakt?
   \item \textbf{Was geht verloren?} Wo treten systematische Verzerrungen auf, und lassen sich diese aus den in Phase~1 identifizierten Raumeigenschaften erklären?
   \item \textbf{Was bedeutet das für die Praxis?} Ab welchem Qualitätsverlust wird der Speicher- und Geschwindigkeitsvorteil durch unbrauchbare Suchergebnisse zunichte gemacht?
-  \item \textbf{Überträgt sich das auf reale Systeme?} Bestätigt die Anwendungsvalidierung über MCP die unter Laborbedingungen gewonnenen Erkenntnisse, oder treten in der Werkzeugkette Effekte auf, die die kontrollierte Evaluation nicht abbildet?
+  \item \textbf{Welche Konfiguration ist praktisch sinnvoll?} Welche TurboQuant-Arbeitspunkte ergeben sich für mobile, kostenoptimierte und hochpräzise Einsatzszenarien?
 \end{enumerate}
 %
-Diese Struktur stellt sicher, dass die Arbeit nicht bei der Beobachtung stehen bleibt, sondern eine wissenschaftlich fundierte Empfehlung abgeben kann, unter welchen Bedingungen welche Kompressionstiefe gerechtfertigt ist, sowohl im kontrollierten Benchmark als auch in einer realistischen Einsatzumgebung.
+Diese Struktur stellt sicher, dass die Arbeit nicht bei der Beobachtung stehen bleibt, sondern eine wissenschaftlich fundierte Empfehlung abgeben kann, unter welchen Bedingungen welche Kompressionstiefe gerechtfertigt ist, sowohl im kontrollierten Benchmark als auch unter praktischen Speicher- und Kostenrestriktionen.
