@@ -485,19 +485,20 @@ Metadaten, Textchunks, ANN-Zusatzstrukturen, Betriebssystem-Overhead und Laufzei
 Damit beschreibt Phase~6 eine untere, aber kontrolliert vergleichbare Speichergrenze.
 %
 Naive Quantisierung wird in Phase~6 nicht als eigene Anwendungslinie weitergeführt.
-Bei gleicher Bittiefe und gleicher Dimensionszahl ist ihr Speicherbedarf identisch zu TurboQuant; Unterschiede liegen primär in der Retrieval-Qualität.
-Da Phase~6 Speicher- und Kostenskalierung bewertet und die vorherigen Phasen zeigen, dass TurboQuant insbesondere bei niedrigen Bittiefen und Dimensionsreduktion robuster ist, wird die praktische Empfehlung auf TurboQuant beschränkt.
+Bei gleicher Bittiefe und gleicher Dimensionszahl ist ihr Speicherbedarf identisch zu TurboQuant, sodass die Speicher- und Kostenrechnung für beide Verfahren gilt.
+Da sich Phase~6 auf Speicher- und Kostenskalierung konzentriert, wird die Empfehlungslinie zur einheitlichen Darstellung auf TurboQuant beschränkt; die zugehörige Qualitätsbewertung erfolgt anhand der in Phase~4 gemessenen Werte.
 %
 \subsection{Szenarioauswahl}
 %
-Aus den Ergebnissen der Phasen~4 und~5 werden drei repräsentative Einsatzszenarien abgeleitet:
+Für die Übertragung in die Praxis werden drei Einsatzszenarien definiert, die sich in ihren Anforderungen an Speicher, Qualität und Betriebskosten unterscheiden.
+Jedem Szenario wird eine TurboQuant-Konfiguration als Arbeitspunkt zugeordnet:
 \begin{itemize}
-  \item \textbf{Edge/Mobile:} minimale Speichernutzung für lokale Suche auf Smartphones, Laptops oder im Browser. Als aggressive Konfiguration wird \texttt{tq\_1bit} bei $d = 768$ verwendet.
-  \item \textbf{Business Sweet Spot:} kostenoptimierte Cloud-Suche mit sehr geringem Qualitätsverlust. Hier wird \texttt{tq\_2bit} bei $d = 1024$ betrachtet.
-  \item \textbf{Enterprise Precision:} hohe Qualität bei weiterhin deutlicher Speicherreduktion. Hier wird \texttt{tq\_4bit} bei $d = 1024$ betrachtet.
+  \item \textbf{Edge/Mobile:} Ziel ist minimale Speichernutzung für lokale Suche auf Smartphones, Laptops oder im Browser. Als aggressive Konfiguration wird \texttt{tq\_1bit} bei $d = 768$ verwendet.
+  \item \textbf{Business Sweet Spot:} Ziel ist eine kostenoptimierte Cloud-Suche, die einen ausgewogenen Kompromiss zwischen Speicherbedarf und Qualität sucht. Hier wird \texttt{tq\_2bit} bei $d = 1024$ betrachtet.
+  \item \textbf{Enterprise Precision:} Ziel ist ein möglichst geringer Qualitätsverlust bei weiterhin deutlicher Speicherreduktion. Hier wird \texttt{tq\_4bit} bei $d = 1024$ betrachtet.
 \end{itemize}
 %
-Diese Szenarien sind keine neuen Algorithmen, sondern Entscheidungspunkte auf der empirisch bestimmten Qualitäts-Speicher-Kurve.
+Diese Szenarien sind keine neuen Algorithmen, sondern feste Arbeitspunkte auf der Qualitäts-Speicher-Kurve, deren Qualitäts- und Speicherwerte aus den Phasen~4 und~5 stammen.
 Die Float32-Repräsentation bei $d = 1024$ dient als Referenz.
 %
 \subsection{Skalierungsrechnung}

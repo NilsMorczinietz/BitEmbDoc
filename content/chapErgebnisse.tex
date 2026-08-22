@@ -29,9 +29,9 @@ Tabelle~\ref{tab:phase1_norms} fasst die Normstatistiken über alle drei Datens�
   \end{tabular}
 \end{table}
 %
-Alle Normen liegen bei exakt~1{,}0.
+Alle Normen liegen bis auf Float32-Maschinengenauigkeit bei~1{,}0 (gemessener Bereich $[0{,}9999999,\ 1{,}0000001]$).
 Die Variationskoeffizienten von $\text{CV} \approx 3 \times 10^{-8}$ liegen in der Größenordnung der Float32-Maschinengenauigkeit ($\epsilon_{\text{float32}} \approx 1{,}2 \times 10^{-7}$) und stellen damit numerisches Rauschen dar, keine inhaltliche Variation.
-Die Vektoren liegen exakt auf der Einheitshypersphäre.
+Die Vektoren liegen damit auf der Einheitshypersphäre.
 %
 \paragraph{Interpretation.}
 Für die Binarisierung ist dieses Ergebnis direkt relevant.
@@ -137,13 +137,13 @@ Das Bild ist das einer gekrümmten Mannigfaltigkeit, die in einen hochdimensiona
 %
 \paragraph{Implikationen für die Dimensionsreduktion.}
 Aus den PCA-Ergebnissen lassen sich quantitative Vorhersagen für die nachfolgenden Phasen ableiten.
-Die Tabelle liefert direkte Werte für $d = 50$, $d = 100$ und $d = 256$; für $d = 64$ und $d = 384$ wird linear interpoliert:
+Tabelle~\ref{tab:phase1_intdim} berichtet die kumulative Varianz an Stützstellen ($d = 50, 100, 256$); die dazwischenliegenden Reduktionsziele $d = 64$ und $d = 384$ werden linear interpoliert:
 \begin{itemize}
-  \item \textbf{$d = 384$:} Interpoliert man zwischen $V(256) \approx 86\,\%$ und dem 95\,\%-Punkt bei $\approx\!400$ Komponenten, ergibt sich eine geschätzte erklärte Varianz von ca.\ 93--94\,\%.
+  \item \textbf{$d = 384$:} Zwischen $V(256) \approx 85$--$88\,\%$ und dem 95\,\%-Punkt bei $\approx\!400$ Komponenten ergibt sich eine erklärte Varianz von etwa 93--94\,\%.
   Eine moderate, aber keine drastische Qualitätsreduktion ist zu erwarten.
   \item \textbf{$d = 256$:} Bei 256 Komponenten verbleiben 85--88\,\% der Varianz.
   Hier beginnt der Bereich, in dem spürbarer Informationsverlust einsetzt.
-  \item \textbf{$d = 64$:} Interpoliert aus $V(50) \approx 50\,\%$ und $V(100) \approx 65\,\%$ ergibt sich $V(64) \approx 54\,\%$.
+  \item \textbf{$d = 64$:} Zwischen $V(50) \approx 50\,\%$ und $V(100) \approx 65\,\%$ ergibt sich $V(64) \approx 54\,\%$.
   Fast die Hälfte der Gesamtvarianz geht verloren -- ein deutlicher Qualitätsverlust ist zu erwarten.
 \end{itemize}
 %
@@ -162,7 +162,7 @@ Diese Hypothese wird in Phase~3 empirisch geprüft.
 Die Charakterisierung ergibt ein konsistentes Bild: Der Embedding-Raum von \texttt{bge-large-en-v1.5} besitzt drei Eigenschaften, die Quantisierung systematisch begünstigen:
 \begin{enumerate}
   \item \textbf{Perfekte Normierung} -- die Binarisierung verliert keine Norminformation.
-  \item \textbf{Symmetrische, leicht-schwänzige Dimensionen} -- der Vorzeichenschwellwert liegt optimal, und uniforme Quantisierung verursacht keine Ausreißer-Fehler.
+  \item \textbf{Symmetrische, nahezu normalverteilte Dimensionen ohne schwere Ränder} -- der Vorzeichenschwellwert liegt optimal, und uniforme Quantisierung verursacht keine Ausreißer-Fehler.
   \item \textbf{Hohe Redundanz} -- die intrinsische Dimensionalität liegt weit unter der nominalen, sodass Kompression über beide Achsen (Bittiefe und Dimensionszahl) möglich ist.
 \end{enumerate}
 %
@@ -219,7 +219,7 @@ Bei voller Dimensionszahl ergibt sich eine klare Stufung: Float16 und 8-Bit sind
 Ein bemerkenswertes Ergebnis ist, dass TurboQuant bei voller Dimensionszahl \emph{keinen} Vorteil gegenüber naiver Quantisierung bietet.
 Bei 8-Bit und 4-Bit sind die Werte nahezu identisch; bei 2-Bit und 1-Bit ist naive Quantisierung sogar geringfügig besser.
 Dies erklärt sich aus der in Phase~1 beobachteten Raumstruktur: Die Dimensionen des Modells sind bereits annähernd symmetrisch und gleichmäßig verteilt.
-Die Hadamard-Rotation von TurboQuant, die darauf abzielt, ungleichmäßige Varianz zu verteilen, findet hier kaum Optimierungspotenzial.
+Die orthogonale Rotation von TurboQuant, die darauf abzielt, ungleichmäßige Varianz zu verteilen, findet hier kaum Optimierungspotenzial.
 Bei 1-Bit zeigt sich sogar ein leichter Nachteil ($r = 0{,}92$ vs.\ $0{,}93$), weil die Rotation bei ohnehin binärer Quantisierung zusätzliche Korrelationen zwischen den Bits einführen kann, ohne die Vorzeichenstruktur zu verbessern.
 %
 Dies bestätigt die in Abschnitt~\ref{sec:ergebnisse_phase1_vorhersagen} formulierte Vorhersage, dass der Vorteil von TurboQuant moderat ausfallen sollte.
@@ -276,7 +276,7 @@ Bei 1-Bit verliert jede Dimension ihre Magnitude -- ein schwaches Signal in Dime
 \paragraph{TurboQuant 1-Bit: Auflösung des Paradoxes.}
 TQ~1-Bit zeigt das Paradox nicht.
 Die Korrelation steigt monoton von $r \approx 0{,}79$ bei $d = 64$ auf $r \approx 0{,}93$ bei $d = 768$ und konvergiert bei $d = 1024$ mit der naiven Variante.
-Die Hadamard-Rotation von TurboQuant verteilt die Varianz gleichmäßig über alle Dimensionen.
+Die orthogonale Rotation von TurboQuant verteilt die Varianz gleichmäßig über alle Dimensionen.
 Nach der Rotation trägt jede Dimension einen vergleichbaren Informationsanteil -- es gibt keine "nutzlosen" Dimensionen mehr, deren Bits nur Rauschen beitragen.
 Damit wird der Verdünnungseffekt aufgelöst.
 %
