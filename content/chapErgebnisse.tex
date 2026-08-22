@@ -35,7 +35,7 @@ Die Vektoren liegen damit auf der Einheitshypersphäre.
 %
 \paragraph{Interpretation.}
 Die Binarisierung verwirft die gesamte Norminformation (vgl.\ Abschnitt~\ref{sec:methodik_phase1}).
-Ein Informationsverlust entsteht dadurch nur, wenn die Norm Unterscheidungskraft zwischen Dokumenten trägt -- bei konstanter Norm ist das nicht der Fall.
+Ein Informationsverlust entsteht dadurch nur, wenn die Norm Unterscheidungskraft zwischen Dokumenten trägt. Bei konstanter Norm ist das nicht der Fall.
 Der einzige verlustbehaftete Anteil der Binarisierung betrifft somit die Beträge innerhalb der Dimensionen: Wie weit ein Wert von Null entfernt ist, geht verloren, das Vorzeichen bleibt erhalten.
 Diese günstige Voraussetzung ist keine Selbstverständlichkeit; Embedding-Modelle ohne explizite L2-Normierung würden hier anders abschneiden.
 %
@@ -68,12 +68,12 @@ Die zugehörige Verteilung über alle 1024 Dimensionen ist in Abbildung~\ref{fig
 %
 Die Ergebnisse sind über alle drei Datensätze konsistent: Keine einzige der 3072 untersuchten Dimensionen ($3 \times 1024$) überschreitet die Schwellwerte.
 Die maximale Schiefe liegt bei~0{,}47 (FiQA) und damit bei weniger als der Hälfte des Grenzwerts.
-Die maximale Kurtosis beträgt~0{,}67 (FiQA), was einer annähernd normalverteilten Dimension entspricht -- weit entfernt von problematischem Ausreißerverhalten.
+Die maximale Kurtosis beträgt~0{,}67 (FiQA), was einer annähernd normalverteilten Dimension entspricht und weit von problematischem Ausreißerverhalten entfernt liegt.
 %
 \paragraph{Interpretation.}
 Die nahezu symmetrischen Verteilungen um Null haben zwei konkrete Implikationen für die Quantisierung.
 %
-Erstens: Bei der Binarisierung wird der Schwellwert bei $x_i = 0$ gesetzt -- positiv wird zu~1, negativ zu~0.
+Erstens: Bei der Binarisierung wird der Schwellwert bei $x_i = 0$ gesetzt, positiv wird zu~1, negativ zu~0.
 Bei einer symmetrischen Verteilung teilt dieser Schwellwert die Werte in zwei annähernd gleich große Hälften.
 Damit trägt jedes Bit maximale Information (Entropie nahe~1).
 Wären Dimensionen stark schief, würde z.\,B.\ eine 80/20-Aufteilung entstehen, und das Bit wäre weniger informativ.
@@ -81,7 +81,7 @@ Da hier keine solche Schiefe vorliegt, arbeitet die Binarisierung unter optimale
 %
 Zweitens: Die niedrige Kurtosis bedeutet, dass keine Dimension Ausreißer aufweist, die bei uniformer Quantisierung mit wenigen Stufen (z.\,B.\ 4~Stufen bei 2-Bit) zu großen Fehlern führen würden.
 Bei hoher Kurtosis würden einzelne extreme Werte den Wertebereich aufblähen und die wenigen Stufen fast leer bleiben.
-Das ist hier nicht der Fall -- die gleichmäßige Stufenverteilung von TurboQuant ist für diesen Raum gut geeignet.
+Das ist hier nicht der Fall. Die gleichmäßige Stufenverteilung von TurboQuant ist für diesen Raum gut geeignet.
 %
 Die Konsistenz über drei unterschiedliche Domänen (Naturwissenschaft, Finanz, Biomedizin) deutet darauf hin, dass diese Eigenschaften vom Modell und nicht vom Datensatz bestimmt werden.
 %
@@ -122,10 +122,10 @@ Das zugehörige PCA-Varianzspektrum und die kumulative erklärte Varianz sind in
 %
 \paragraph{Diskrepanz zwischen lokaler und globaler Schätzung.}
 Die auffälligste Beobachtung ist die starke Divergenz zwischen den beiden Schätzern.
-TwoNN schätzt die lokale Mannigfaltigkeitsdimension auf~11--22, während PCA 390--417 Komponenten für 95\,\% Varianz benötigt -- eine Differenz von mehr als einer Größenordnung.
+TwoNN schätzt die lokale Mannigfaltigkeitsdimension auf~11--22, während PCA 390--417 Komponenten für 95\,\% Varianz benötigt, eine Differenz von mehr als einer Größenordnung.
 %
 TwoNN misst die lokalen Freiheitsgrade: Wie viele unabhängige Richtungen existieren in der unmittelbaren Umgebung eines Punktes?
-Der niedrige Wert zeigt, dass semantisch ähnliche Dokumente sich nur entlang weniger Achsen unterscheiden -- die Daten liegen lokal auf einer niedrigdimensionalen Mannigfaltigkeit.
+Der niedrige Wert zeigt, dass semantisch ähnliche Dokumente sich nur entlang weniger Achsen unterscheiden; die Daten liegen lokal auf einer niedrigdimensionalen Mannigfaltigkeit.
 %
 PCA misst hingegen die globale lineare Dimensionalität: Wie viele orthogonale Richtungen sind nötig, um die Gesamtstreuung aller Punkte zu erfassen?
 Der hohe Wert zeigt, dass die Mannigfaltigkeit zwar lokal flach ist, aber global viele verschiedene Orientierungen einnimmt.
@@ -139,7 +139,7 @@ Tabelle~\ref{tab:phase1_intdim} berichtet die kumulative erklärte Varianz an de
   Nur eine marginale Qualitätsreduktion ist zu erwarten.
   \item \textbf{$d = 256$:} Bei 256 Komponenten verbleiben 85{,}4--87{,}8\,\% der Varianz.
   Hier beginnt der Bereich, in dem spürbarer Informationsverlust einsetzt.
-  \item \textbf{$d = 64$:} Mit nur 54{,}6--57{,}6\,\% erklärter Varianz geht fast die Hälfte der Gesamtstreuung verloren -- ein deutlicher Qualitätsverlust ist zu erwarten.
+  \item \textbf{$d = 64$:} Mit nur 54{,}6--57{,}6\,\% erklärter Varianz geht fast die Hälfte der Gesamtstreuung verloren, sodass ein deutlicher Qualitätsverlust zu erwarten ist.
 \end{itemize}
 %
 \paragraph{Implikationen für die Quantisierung.}
@@ -156,9 +156,9 @@ Diese Hypothese wird in Phase~3 empirisch geprüft.
 %
 Die Charakterisierung ergibt ein konsistentes Bild: Der Embedding-Raum von \texttt{bge-large-en-v1.5} besitzt drei Eigenschaften, die Quantisierung systematisch begünstigen:
 \begin{enumerate}
-  \item \textbf{Perfekte Normierung} -- die Binarisierung verliert keine Norminformation.
-  \item \textbf{Symmetrische, nahezu normalverteilte Dimensionen ohne schwere Ränder} -- der Vorzeichenschwellwert liegt optimal, und uniforme Quantisierung verursacht keine Ausreißer-Fehler.
-  \item \textbf{Hohe Redundanz} -- die intrinsische Dimensionalität liegt weit unter der nominalen, sodass Kompression über beide Achsen (Bittiefe und Dimensionszahl) möglich ist.
+  \item \textbf{Perfekte Normierung:} Die Binarisierung verliert keine Norminformation.
+  \item \textbf{Symmetrische, nahezu normalverteilte Dimensionen ohne schwere Ränder:} Der Vorzeichenschwellwert liegt optimal, und uniforme Quantisierung verursacht keine Ausreißer-Fehler.
+  \item \textbf{Hohe Redundanz:} Die intrinsische Dimensionalität liegt weit unter der nominalen, sodass Kompression über beide Achsen (Bittiefe und Dimensionszahl) möglich ist.
 \end{enumerate}
 %
 Daraus ergeben sich testbare Vorhersagen für die nachfolgenden Phasen:
@@ -215,10 +215,10 @@ Ein bemerkenswertes Ergebnis ist, dass TurboQuant bei voller Dimensionszahl \emp
 Bei 8-Bit und 4-Bit sind die Werte nahezu identisch; bei 2-Bit und 1-Bit ist naive Quantisierung sogar geringfügig besser.
 Dies erklärt sich aus der in Phase~1 beobachteten Raumstruktur: Die Dimensionen des Modells sind bereits annähernd symmetrisch und gleichmäßig verteilt.
 Die orthogonale Rotation von TurboQuant, die darauf abzielt, ungleichmäßige Varianz zu verteilen, findet hier kaum Optimierungspotenzial.
-Bei 1-Bit zeigt sich sogar ein leichter Nachteil ($r = 0{,}92$ vs.\ $0{,}93$), weil die Rotation bei ohnehin binärer Quantisierung zusätzliche Korrelationen zwischen den Bits einführen kann, ohne die Vorzeichenstruktur zu verbessern.
+Bei 1-Bit liegt naive Quantisierung mit $r = 0{,}93$ gegenüber $0{,}92$ sogar minimal vorn. Dieser vernachlässigbare, aber systematische Unterschied entsteht, weil die Rotation bei ohnehin binärer Quantisierung zusätzliche Korrelationen zwischen den Bits einführen kann, ohne die Vorzeichenstruktur zu verbessern.
 %
 Dies bestätigt die in Abschnitt~\ref{sec:ergebnisse_phase1_vorhersagen} formulierte Vorhersage, dass der Vorteil von TurboQuant moderat ausfallen sollte.
-Bei voller Dimensionszahl fällt er sogar gänzlich weg -- die Rotation zahlt sich erst unter Dimensionsreduktion aus (siehe nächster Abschnitt).
+Bei voller Dimensionszahl fällt er sogar gänzlich weg; die Rotation zahlt sich erst unter Dimensionsreduktion aus (siehe nächster Abschnitt).
 %
 \subsection{Einfluss der Dimensionsreduktion}
 \label{sec:ergebnisse_phase2_dim}
@@ -244,40 +244,40 @@ Die zentrale Beobachtung ist, dass die verschiedenen Bittiefen sehr unterschiedl
 Float16, 8-Bit und 4-Bit (sowohl naiv als auch TQ) zeigen nahezu keine Abhängigkeit von der Dimensionszahl.
 Selbst bei $d = 64$ liegt Pearson~$r$ für 8-Bit über 0{,}999 und für 4-Bit über 0{,}975.
 Das bedeutet: Bei ausreichender Bittiefe ist Dimensionsreduktion auf $d \geq 64$ mit minimalem zusätzlichem Fehler möglich.
-Dies bestätigt die PCA-Analyse aus Phase~1, die bei 50 Komponenten bereits 50\,\% der Varianz konserviert -- für hochbitige Repräsentationen reicht selbst diese reduzierte Information aus, um die Distanzstruktur zu erhalten.
+Dies bestätigt die PCA-Analyse aus Phase~1, die bei 50 Komponenten bereits 50\,\% der Varianz konserviert; für hochbitige Repräsentationen reicht selbst diese reduzierte Information aus, um die Distanzstruktur zu erhalten.
 %
 \paragraph{Naive 2-Bit: Stagnation.}
-Naive 2-Bit-Quantisierung zeigt ein unerwartetes Verhalten: Der Pearson-Koeffizient verharrt über den gesamten Bereich von $d = 64$ bis $d = 768$ bei $r \approx 0{,}62$--$0{,}65$ und springt erst bei $d = 1024$ auf $r \approx 0{,}93$.
-Die Dimensionsreduktion scheint weder zu helfen noch wesentlich zu schaden -- das dominante Problem ist die grobe Quantisierung selbst.
+Naive 2-Bit-Quantisierung zeigt ein unerwartetes Verhalten: Der Pearson-Koeffizient verharrt über den gesamten Bereich von $d = 64$ bis $d = 768$ bei $r \approx 0{,}62$--$0{,}64$ und springt erst bei $d = 1024$ auf $r \approx 0{,}93$.
+Die Dimensionsreduktion scheint weder zu helfen noch wesentlich zu schaden; das dominante Problem ist die grobe Quantisierung selbst.
 Bei nur 4 Stufen werden viele unterschiedliche Float-Werte auf denselben quantisierten Wert abgebildet; diese Kollisionen dominieren den Fehler unabhängig davon, ob die Eingabe 64 oder 768 Dimensionen hat.
-TQ~2-Bit hingegen steigt kontinuierlich von $r \approx 0{,}76$ bei $d = 64$ auf $r \approx 0{,}93$ bei $d = 768$ und konvergiert bei $d = 1024$ mit der naiven Variante.
+TQ~2-Bit hingegen steigt kontinuierlich von $r \approx 0{,}77$ bei $d = 64$ auf $r \approx 0{,}92$ bei $d = 768$ und konvergiert bei $d = 1024$ mit der naiven Variante.
 %
 \paragraph{Naive 1-Bit: Das Verdünnungsparadox.}
 Das auffälligste Ergebnis der gesamten Phase~2 betrifft die naive 1-Bit-Quantisierung.
-Entgegen der naiven Erwartung, dass mehr Dimensionen stets mehr Information bedeuten, \emph{sinkt} die Korrelation mit steigender PCA-Dimension -- von $r \approx 0{,}45$ bei $d = 64$ auf $r \approx 0{,}20$ bei $d = 768$.
+Entgegen der naiven Erwartung, dass mehr Dimensionen stets mehr Information bedeuten, \emph{sinkt} die Korrelation mit steigender PCA-Dimension: von $r \approx 0{,}45$ bei $d = 64$ auf $r \approx 0{,}20$ bei $d = 768$.
 Erst bei $d = 1024$ (ohne PCA) springt der Wert auf $r \approx 0{,}93$.
 %
 Dieses Verhalten lässt sich wie folgt erklären.
-PCA-Projektion auf $d < 1024$ komprimiert die Information in weniger Dimensionen, erhält aber deren Signalstärke -- die Werte pro Dimension haben eine ausreichende Varianz, um nach Binarisierung noch unterscheidbar zu sein.
+PCA-Projektion auf $d < 1024$ komprimiert die Information in weniger Dimensionen, erhält aber deren Signalstärke; die Werte pro Dimension haben eine ausreichende Varianz, um nach Binarisierung noch unterscheidbar zu sein.
 Bei $d = 1024$ (originaler Raum ohne PCA) liegen die Werte in einem gut verteilten, vom Modell gelernten Raum.
 Im Zwischenbereich ($d = 128$--$768$) entsteht jedoch ein problematischer Zustand: Die PCA-Projektion verteilt die verbleibende Varianz auf mehr Dimensionen als nötig, wobei die hinteren Komponenten immer weniger Signal tragen.
 Die Binarisierung dieser signalschwachen Dimensionen erzeugt quasi-zufällige Bits, die die Hamming-Distanz mit Rauschen überfluten.
 Bei $d = 768$ tragen bereits hunderte Dimensionen kaum noch Information, ihre Bits sind aber alle gleichgewichtet in der Hamming-Distanz.
 %
 Dieses Verdünnungsparadox tritt nur bei 1-Bit auf, weil höhere Bittiefen die Magnitudenbeibehaltung erlauben.
-Schwache PCA-Komponenten werden bei 4-Bit korrekt als "nahe Null" kodiert und tragen wenig zur Distanz bei.
-Bei 1-Bit verliert jede Dimension ihre Magnitude -- ein schwaches Signal in Dimension~500 hat dasselbe Gewicht wie ein starkes Signal in Dimension~1.
+Schwache PCA-Komponenten werden bei 4-Bit korrekt als \enquote{nahe Null} kodiert und tragen wenig zur Distanz bei.
+Bei 1-Bit verliert jede Dimension ihre Magnitude, sodass ein schwaches Signal in Dimension~500 dasselbe Gewicht hat wie ein starkes Signal in Dimension~1.
 %
 \paragraph{TurboQuant 1-Bit: Auflösung des Paradoxes.}
 TQ~1-Bit zeigt das Paradox nicht.
-Die Korrelation steigt monoton von $r \approx 0{,}79$ bei $d = 64$ auf $r \approx 0{,}93$ bei $d = 768$ und konvergiert bei $d = 1024$ mit der naiven Variante.
+Die Korrelation steigt monoton von $r \approx 0{,}79$ bei $d = 64$ auf $r \approx 0{,}94$ bei $d = 768$ und erreicht bei $d = 1024$ nahezu das Niveau der naiven Variante.
 Die orthogonale Rotation von TurboQuant verteilt die Varianz gleichmäßig über alle Dimensionen.
-Nach der Rotation trägt jede Dimension einen vergleichbaren Informationsanteil -- es gibt keine "nutzlosen" Dimensionen mehr, deren Bits nur Rauschen beitragen.
+Nach der Rotation trägt jede Dimension einen vergleichbaren Informationsanteil; es gibt keine \enquote{nutzlosen} Dimensionen mehr, deren Bits nur Rauschen beitragen.
 Damit wird der Verdünnungseffekt aufgelöst.
 %
-\subsection{Absolute Verzerrung}
+\subsection{Gesamtmatrix und absolute Verzerrung}
 %
-Abbildung~\ref{fig:phase2_heatmap} zeigt exemplarisch die Pearson-Korrelation als Heatmap über die gesamte Versuchsmatrix (Repräsentation~$\times$~Dimensionszahl) für den SciFact-Datensatz.
+Abbildung~\ref{fig:phase2_heatmap} fasst die gesamte Versuchsmatrix (Repräsentation~$\times$~Dimensionszahl) exemplarisch als Pearson-Heatmap für den SciFact-Datensatz zusammen und macht die zuvor beschriebenen Muster auf einen Blick sichtbar.
 %
 \begin{figure}[htbp]
   \centering
@@ -288,8 +288,12 @@ Abbildung~\ref{fig:phase2_heatmap} zeigt exemplarisch die Pearson-Korrelation al
 %
 Bezüglich MAE und RMSE bestätigen sich die Korrelationsergebnisse.
 Die Verhältnisse $\text{RMSE}/\text{MAE}$ liegen für alle Methoden zwischen 1{,}1 und 1{,}3, was auf eine relativ gleichmäßige Fehlerverteilung ohne extreme Ausreißer hindeutet.
-Selbst bei naiver 1-Bit-Quantisierung mit $d = 768$ (dem worst case) bleibt RMSE/MAE bei~1{,}25.
+Selbst bei naiver 1-Bit-Quantisierung mit $d = 768$ (dem ungünstigsten Fall) bleibt RMSE/MAE bei~1{,}25.
 Die Fehler sind also nicht durch wenige katastrophal falsche Paare dominiert, sondern verteilen sich gleichmäßig.
+%
+Der in Abschnitt~\ref{sec:methodik_phase2} beschriebene kritische Fall einer hohen Korrelation bei gleichzeitig hohem absolutem Fehler tritt bei der 2-Bit-Quantisierung auf: Bei $d = 1024$ erreicht naive 2-Bit zwar $r \approx 0{,}93$, weist aber mit $\text{MAE} \approx 0{,}086$ eine deutliche absolute Abweichung auf.
+Die Distanzen bleiben also monoton weitgehend korrekt, das absolute Distanzniveau ist jedoch spürbar verschoben.
+Für rein rangbasiertes Retrieval ist dies unkritisch, für schwellwertbasierte Systeme mit fester Ähnlichkeitsgrenze wäre es dagegen relevant.
 %
 \subsection{Pareto-Analyse: Qualität vs.\ Speicherbedarf}
 %
@@ -299,7 +303,7 @@ Eine Konfiguration liegt auf der Pareto-Front, wenn keine andere Konfiguration b
 \begin{figure}[htbp]
   \centering
   \includegraphics[width=\textwidth]{distortion_pareto.pdf}
-  \caption{Pareto-Front der Distanzerhaltung: Spearman~$\rho$ als Funktion des Speicherbedarfs (Bit pro Vektor). Konfigurationen auf der Front sind nicht dominiert -- es existiert keine andere Konfiguration mit gleichem oder kleinerem Speicher und besserer Rangerhaltung.}
+  \caption{Pareto-Front der Distanzerhaltung: Spearman~$\rho$ als Funktion des Speicherbedarfs (Bit pro Vektor). Konfigurationen auf der Front sind nicht dominiert; es existiert keine andere Konfiguration mit gleichem oder kleinerem Speicher und besserer Rangerhaltung.}
   \label{fig:phase2_pareto}
 \end{figure}
 %
@@ -318,30 +322,29 @@ Die Ergebnisse von Phase~2 lassen sich in direkten Bezug zu den Vorhersagen aus 
 %
 \paragraph{Vorhersage 1: Naive Binarisierung zeigt nicht-triviale Distanzerhaltung.}
 Bestätigt.
-Naive 1-Bit erreicht bei $d = 1024$ einen Pearson~$r \approx 0{,}93$ -- das bedeutet, dass allein die Vorzeichen der 1024 Dimensionen über 85\,\% der Distanzvarianz erklären (bestimmt als $r^2 \approx 0{,}86$).
+Naive 1-Bit erreicht bei $d = 1024$ einen Pearson~$r \approx 0{,}93$; das bedeutet, dass allein die Vorzeichen der 1024 Dimensionen über 85\,\% der Distanzvarianz erklären (bestimmt als $r^2 \approx 0{,}86$).
 Die in Phase~1 beobachteten günstigen Voraussetzungen (Symmetrie, perfekte Normierung) setzen sich in einem überraschend starken Binarisierungsergebnis um.
 %
 \paragraph{Vorhersage 2: Moderater TurboQuant-Vorteil.}
 Teilweise bestätigt, teilweise revidiert.
-Bei voller Dimensionszahl ist der Vorteil nicht nur moderat, sondern \emph{null}.
-Unter Dimensionsreduktion ist der Vorteil für 1-Bit jedoch \emph{dramatisch}: TQ hebt $r$ von~0{,}20 auf~0{,}93 bei $d = 768$ -- ein Faktor~4{,}7 in der erklärten Varianz.
-Für 2-Bit ist der Vorteil moderater aber konsistent (Hebung von $r \approx 0{,}62$ auf $r \approx 0{,}91$).
-Die Vorhersage war korrekt in der Richtung, unterschätzte aber die Interaktion zwischen Rotation und Dimensionsreduktion.
+Bei voller Dimensionszahl ist der Vorteil nicht nur moderat, sondern \emph{null} (vgl.\ den Konvergenzbefund oben).
+Unter Dimensionsreduktion kehrt sich das Bild jedoch um: Bei $d = 768$ hebt die Rotation den Pearson-Wert für 1-Bit von~0{,}20 auf~0{,}94 und für 2-Bit von~0{,}62 auf~0{,}92.
+Die Vorhersage traf die Richtung, unterschätzte aber, dass sich der TQ-Vorteil erst im Zusammenspiel mit Dimensionsreduktion entfaltet.
 %
 \paragraph{Vorhersage 3: PCA auf $d \geq 384$ verursacht nur marginale Verluste.}
 Bestätigt für 8-Bit und 4-Bit (sowohl naiv als auch TQ), wo die Korrelation bei $d = 384$ praktisch identisch zu $d = 1024$ bleibt.
-Für 2-Bit und 1-Bit gelten andere Verhältnisse: Hier ist die Interaktion zwischen Dimensionszahl und Quantisierungsstufe nicht additiv, sondern multiplikativ.
+Für 2-Bit und 1-Bit gilt dies nicht: Bittiefe und Dimensionszahl wirken hier nicht unabhängig voneinander, sondern verstärken sich gegenseitig. Die geringe Stufenzahl macht diese Repräsentationen empfindlich gegenüber Dimensionsreduktion, sodass der Verlust bei $d \geq 384$ deutlich größer ausfällt als bei den hochbitigen Verfahren.
 %
 \paragraph{Vorhersage 4: Stärkste Qualitätseinbrüche bei $d \leq 128$.}
 Bestätigt für TQ~1-Bit und TQ~2-Bit, wo $d = 64$ deutlich unter dem Niveau bei $d = 256$ liegt.
-Für naive~1-Bit trifft sie nicht zu -- dort ist das Minimum überraschenderweise nicht bei der niedrigsten Dimensionszahl, sondern bei mittleren Dimensionen um $d = 768$.
+Für naive~1-Bit trifft sie nicht zu; dort liegt das Minimum überraschenderweise nicht bei der niedrigsten Dimensionszahl, sondern bei mittleren Dimensionen um $d = 768$.
 %
 \paragraph{Zusammenfassung.}
 Phase~2 zeigt, dass die Distanzerhaltung durch zwei Faktoren bestimmt wird: Bittiefe und Dimensionszahl.
 Für hochbitige Verfahren ($\geq 4$~Bit) ist Dimensionsreduktion weitgehend unproblematisch.
-Für niedrigbitige Verfahren (1-Bit, 2-Bit) entsteht eine kritische Interaktion, bei der TurboQuant die Rolle eines \emph{enablers} übernimmt: Ohne Rotation kollabiert naive 1-Bit unter PCA, mit Rotation bleibt die Distanzstruktur intakt.
+Für niedrigbitige Verfahren (1-Bit, 2-Bit) entsteht eine kritische Interaktion, bei der TurboQuant die Rolle eines \emph{Wegbereiters} übernimmt: Ohne Rotation kollabiert naive 1-Bit unter PCA, mit Rotation bleibt die Distanzstruktur intakt.
 %
-Ob diese Distanzerhaltung sich auch in korrekte \emph{lokale} Nachbarschaften übersetzt -- die für Retrieval letztlich entscheidend sind -- prüft Phase~3.
+Ob diese Distanzerhaltung sich auch in korrekte \emph{lokale} Nachbarschaften übersetzt, die für Retrieval letztlich entscheidend sind, prüft Phase~3.
 %
 \section{Phase~6: Praktische Anwendungsfall- und Skalierungsanalyse}
 \label{sec:ergebnisse_phase6}
