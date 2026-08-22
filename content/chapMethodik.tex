@@ -2,11 +2,13 @@
 %
 \section{Experimenteller Rahmen}
 %
-Zur Beantwortung der in Abschnitt~\ref{sec:forschungsfrage} formulierten Forschungsfrage wird ein kontrolliertes Experiment durchgeführt, das sich in sechs Phasen gliedert:
+Zur Beantwortung der in Abschnitt~\ref{sec:forschungsfrage} formulierten Forschungsfrage wird ein kontrolliertes Experiment durchgeführt.
+Aus dem Float-Raum werden zunächst komprimierte Repräsentationen abgeleitet, variiert entlang zweier Achsen (Bittiefe und Dimensionszahl); die Erzeugung dieser Repräsentationen ist in Abschnitt~\ref{sec:methodik_repraeraeume} beschrieben.
+Die eigentliche Untersuchung gliedert sich anschließend in sechs Phasen:
 \begin{enumerate}
   \item \textbf{Charakterisierung:} Der Float-Raum wird statistisch und geometrisch analysiert, um Erwartungen an den Quantisierungsverlust zu formulieren.
-  \item \textbf{Kompression:} Aus dem Float-Raum werden komprimierte Repräsentationen abgeleitet, variiert entlang zweier Achsen (Bittiefe und Dimensionszahl).
-  \item \textbf{Strukturanalyse:} Die Fähigkeit der komprimierten Räume zur Distanz- und Nachbarschaftserhaltung wird gemessen.
+  \item \textbf{Distanz- und Fehleranalyse:} Die Erhaltung der globalen paarweisen Distanzstruktur unter Quantisierung wird gemessen.
+  \item \textbf{Nachbarschaftserhaltung:} Die Erhaltung der lokalen Nachbarschaftsstruktur wird über Neighborhood Overlap und Trustworthiness bewertet.
   \item \textbf{Retrieval-Evaluation:} Die tatsächliche Auswirkung auf die Suchqualität wird mit etablierten Information-Retrieval-Metriken quantifiziert.
   \item \textbf{Praktische Evaluation:} Speicherbedarf und Suchgeschwindigkeit werden gemessen, um Qualität und Effizienz gegeneinander abzuwägen.
   \item \textbf{Anwendungs- und Skalierungsanalyse:} Die gemessenen Qualitäts- und Effizienzwerte werden auf konkrete Einsatzszenarien, Indexgrößen und Betriebskosten übertragen.
@@ -62,6 +64,7 @@ Andere Architekturen erzeugen Vektorräume mit abweichender Varianzstruktur und 
 Die qualitative Analyse (welche Raumeigenschaften Quantisierung begünstigen oder erschweren) ist davon weniger betroffen, da sie auf allgemeinen geometrischen Prinzipien beruht.
 %
 \section{Erzeugung der Repräsentationsräume}
+\label{sec:methodik_repraeraeume}
 %
 Ausgangspunkt ist der vollständige Float-Raum.
 Für jedes Dokument im Datensatz wird ein Embedding-Vektor $\mathbf{x} \in \mathbb{R}^{1024}$ berechnet.
