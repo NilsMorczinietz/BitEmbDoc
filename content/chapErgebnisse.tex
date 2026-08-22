@@ -405,7 +405,7 @@ Mit 96~Byte pro Vektor erreicht sie einen Kompressionsfaktor von 42{,}7 gegenüb
 %
 \subsection{Mobile Skalierung unterhalb von 10~Millionen Vektoren}
 %
-Für lokale Anwendungen ist ein 10-Millionen-Vektorindex eher eine Obergrenze als ein typischer Fall.
+Für lokale Anwendungen ist ein Index mit 10~Millionen Vektoren eher eine Obergrenze als ein typischer Fall.
 Deshalb wird das Edge/Mobile-Szenario zusätzlich unterhalb dieser Grenze betrachtet.
 Tabelle~\ref{tab:phase6_mobile_dims} zeigt den Einfluss der Dimensionszahl für \texttt{tq\_1bit}.
 %
@@ -453,11 +453,11 @@ Der Bereich von 100\,000 bis 500\,000 Embeddings erscheint als realistischer On-
 \subsection{Cloud-Kosten und betriebliche Relevanz}
 %
 Für Cloud-Szenarien übersetzt sich die Speicherreduktion direkt in kleinere Instanzklassen.
-Tabelle~\ref{tab:phase6_aws} zeigt die modellierte Kostenwirkung für einen 10-Millionen-Vektorindex.
+Tabelle~\ref{tab:phase6_aws} zeigt die modellierte Kostenwirkung für einen Index mit 10~Millionen Vektoren.
 %
 \begin{table}[htbp]
   \centering
-  \caption{Grobe AWS-Kostenrechnung für einen 10-Millionen-Vektorindex. Die Werte sind als On-Demand-Größenordnung zu interpretieren.}
+  \caption{Grobe AWS-Kostenrechnung für einen Index mit 10~Millionen Vektoren. Die Werte sind als On-Demand-Größenordnung zu interpretieren.}
   \label{tab:phase6_aws}
   \begin{tabular}{lcccc}
     \toprule
@@ -473,13 +473,13 @@ Tabelle~\ref{tab:phase6_aws} zeigt die modellierte Kostenwirkung für einen 10-M
 \begin{figure}[htbp]
   \centering
   \includegraphics[width=0.9\textwidth]{phase6_aws_cost_savings.pdf}
-  \caption{Geschätzte monatliche AWS-Kosten für einen 10-Millionen-Vektorindex. Die Kostenreduktion entsteht nicht durch schnellere Berechnung, sondern durch die Möglichkeit, kleinere speicherärmere Instanzen zu verwenden.}
+  \caption{Geschätzte monatliche AWS-Kosten für einen Index mit 10~Millionen Vektoren. Die Kostenreduktion entsteht nicht durch schnellere Berechnung, sondern durch die Möglichkeit, kleinere speicherärmere Instanzen zu verwenden.}
   \label{fig:phase6_aws_costs}
 \end{figure}
 %
 Die Kostenrechnung ist nicht als universelle Preisprognose zu verstehen, sondern als Größenordnung.
 Sie zeigt dennoch eine klare betriebliche Konsequenz: \texttt{tq\_2bit 1024d} reduziert den modellierten Monatsbetrag von 368~USD auf 24{,}50~USD.
-Das entspricht einer Ersparnis von 343{,}50~USD pro Monat beziehungsweise 4\,122~USD pro Jahr für einen einzelnen 10-Millionen-Vektorindex.
+Das entspricht einer Ersparnis von 343{,}50~USD pro Monat beziehungsweise 4\,122~USD pro Jahr für einen einzelnen Index mit 10~Millionen Vektoren.
 Bei mehreren Indizes oder mandantengetrennten Deployments skaliert dieser Effekt entsprechend.
 %
 \subsection{Einordnung}
