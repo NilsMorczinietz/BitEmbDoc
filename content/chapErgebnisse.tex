@@ -346,6 +346,139 @@ Für niedrigbitige Verfahren (1-Bit, 2-Bit) entsteht eine kritische Interaktion,
 %
 Ob diese Distanzerhaltung sich auch in korrekte \emph{lokale} Nachbarschaften übersetzt, die für Retrieval letztlich entscheidend sind, prüft Phase~3.
 %
+\section{Phase~3: Nachbarschaftserhaltung}
+\label{sec:ergebnisse_phase3}
+%
+Phase~2 bewertet die globale Distanzstruktur über zufällige Paare.
+Für Retrieval ist jedoch nicht entscheidend, ob weit entfernte Dokumente korrekt als weit entfernt erkannt werden, sondern ob die nächsten Nachbarn eines Dokuments dieselben bleiben.
+Phase~3 misst daher die Erhaltung der lokalen Nachbarschaftsstruktur über zwei Metriken: Neighborhood Overlap (welcher Anteil der $k$ nächsten Nachbarn bleibt erhalten) und Trustworthiness (werden falsche Nachbarn eingeführt).
+Alle Werte sind über die drei Datensätze gemittelt und beziehen sich, sofern nicht anders angegeben, auf $k = 10$ als praxisrelevantesten Wert.
+%
+\subsection{Nachbarschaftserhaltung bei voller Dimensionszahl}
+\label{sec:ergebnisse_phase3_fulldim}
+%
+Tabelle~\ref{tab:phase3_fulldim} zeigt Overlap und Trustworthiness bei $d = 1024$.
+%
+\begin{table}[htbp]
+  \centering
+  \caption{Neighborhood Overlap und Trustworthiness bei $d = 1024$ und $k = 10$ (keine Dimensionsreduktion). Mittelwerte über drei Datensätze. Die Zufallsbaseline für Overlap liegt bei $k/N \approx 0{,}002$.}
+  \label{tab:phase3_fulldim}
+  \begin{tabular}{lcc}
+    \toprule
+    Repräsentation & Overlap@10 & Trustworthiness@10 \\
+    \midrule
+    Float16         & 0{,}994 & 1{,}000 \\
+    Naive 8-Bit     & 0{,}996 & 1{,}000 \\
+    TQ 8-Bit        & 0{,}996 & 1{,}000 \\
+    Naive 4-Bit     & 0{,}936 & 1{,}000 \\
+    TQ 4-Bit        & 0{,}936 & 1{,}000 \\
+    Naive 2-Bit     & 0{,}706 & 0{,}999 \\
+    TQ 2-Bit        & 0{,}707 & 0{,}999 \\
+    Naive 1-Bit     & 0{,}605 & 0{,}998 \\
+    TQ 1-Bit        & 0{,}604 & 0{,}998 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+%
+\paragraph{Overlap: strengeres Kriterium als Distanzerhaltung.}
+Der Overlap fällt mit sinkender Bittiefe deutlich steiler ab als die Distanzkorrelation aus Phase~2.
+Float16 und 8-Bit erhalten die Nachbarschaft nahezu vollständig (Overlap $> 0{,}99$), 4-Bit bleibt mit $0{,}936$ auf hohem Niveau.
+Bei 2-Bit verbleiben nur noch etwa 71\,\% und bei 1-Bit rund 60\,\% der ursprünglichen Nachbarn.
+Zum Vergleich: Dieselben Verfahren erreichten in Phase~2 bei $d = 1024$ noch Distanzkorrelationen um $r \approx 0{,}92$.
+Die lokale Nachbarschaft ist damit das strengere Kriterium; eine gut erhaltene globale Distanzstruktur garantiert noch keine identische Nachbarschaft, da bei kleinen Distanzunterschieden bereits geringe Verzerrungen die Rangfolge der nächsten Nachbarn verändern.
+%
+\paragraph{Trustworthiness: kaum falsche Nachbarn.}
+Das zentrale Ergebnis der Phase~3 ist der Kontrast zwischen Overlap und Trustworthiness.
+Während der Overlap bei niedrigen Bittiefen deutlich einbricht, bleibt die Trustworthiness durchgehend nahe~1 und fällt selbst bei 1-Bit nicht unter $0{,}998$.
+Das bedeutet: Quantisierung \emph{verliert} zwar echte Nachbarn, führt aber kaum \emph{falsche} Nachbarn ein.
+Die wenigen Dokumente, die neu in die Top-$k$ gelangen, stammen fast ausschließlich aus Rängen knapp außerhalb der Nachbarschaft; im Float-Raum weit entfernte Dokumente erscheinen praktisch nie in der engsten Nachbarschaft.
+Für Retrieval ist dies die günstigere Fehlerform, da die angezeigten Treffer relevant bleiben, auch wenn einzelne echte Nachbarn fehlen.
+%
+\paragraph{Konvergenz von TurboQuant und naiver Quantisierung.}
+Wie schon in Phase~2 bei voller Dimensionszahl sind naive und rotierte Varianten nahezu identisch (etwa $0{,}605$ gegenüber $0{,}604$ bei 1-Bit).
+Ohne Dimensionsreduktion bietet die Rotation auch für die Nachbarschaftserhaltung keinen Vorteil, was mit der bereits gleichmäßigen Raumstruktur aus Phase~1 übereinstimmt.
+%
+\subsection{Einfluss der Dimensionsreduktion}
+\label{sec:ergebnisse_phase3_dim}
+%
+Abbildung~\ref{fig:phase3_overlap_by_dim} zeigt den Overlap als Funktion der PCA-Dimension, Abbildung~\ref{fig:phase3_trust_by_dim} die entsprechende Trustworthiness.
+Die Kurven und die folgenden Werte beziehen sich auf $k = 20$; das Muster ist für $k = 10$ identisch.
+%
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=\textwidth]{neighborhood_overlap_by_dim_k20.pdf}
+  \caption{Neighborhood Overlap als Funktion der PCA-Dimension $d$ (aggregiert über drei Datensätze, $k = 20$). Höhere Bittiefen erhalten die Nachbarschaft über alle Dimensionen robust, während 1-Bit ohne Rotation bei mittleren Dimensionen einbricht.}
+  \label{fig:phase3_overlap_by_dim}
+\end{figure}
+%
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=\textwidth]{neighborhood_trustworthiness_by_dim_k20.pdf}
+  \caption{Trustworthiness als Funktion der PCA-Dimension $d$ (aggregiert über drei Datensätze, $k = 20$). Alle rotierten Verfahren bleiben nahe~1; nur naive 1-Bit fällt unter Dimensionsreduktion sichtbar ab.}
+  \label{fig:phase3_trust_by_dim}
+\end{figure}
+%
+\paragraph{Robuste Methoden (4-Bit und höher).}
+TQ~4-Bit erhält die Nachbarschaft über den gesamten Dimensionsbereich robust; der Overlap steigt von $0{,}867$ bei $d = 64$ auf $0{,}941$ bei $d = 1024$ und bleibt damit auch unter starker Dimensionsreduktion hoch.
+Dies bestätigt die Vorhersage aus Phase~1, dass bei ausreichender Bittiefe eine PCA-Reduktion die lokale Struktur nur marginal beschädigt.
+%
+\paragraph{Wiederkehr des Verdünnungsparadoxes.}
+Das in Phase~2 beobachtete Verdünnungsparadox tritt auch bei der Nachbarschaftserhaltung auf.
+Der Overlap der naiven 1-Bit-Quantisierung steigt mit zunehmender Dimension nicht an, sondern verharrt zwischen $d = 64$ und $d = 768$ bei etwa $0{,}24$--$0{,}31$ und springt erst bei $d = 1024$ auf $0{,}612$.
+Trustworthiness zeigt dasselbe Muster in verschärfter Form: Sie sinkt bei naiver 1-Bit von $0{,}925$ bei $d = 64$ auf $0{,}799$ bei $d = 768$, bevor sie bei $d = 1024$ auf $0{,}997$ zurückspringt.
+Unter Dimensionsreduktion führt naive 1-Bit also nicht nur mehr Nachbarn-Verluste, sondern auch spürbar mehr falsche Nachbarn ein.
+Die Ursache ist dieselbe wie in Phase~2: Die hinteren PCA-Komponenten tragen wenig Signal, ihre Binarisierung erzeugt Rauschen, das die Hamming-Distanz dominiert.
+%
+\paragraph{TurboQuant als Wegbereiter.}
+TQ~1-Bit zeigt das Paradox erneut nicht.
+Der Overlap steigt monoton von $0{,}393$ bei $d = 64$ auf $0{,}696$ bei $d = 768$, und die Trustworthiness bleibt über alle Dimensionen bei mindestens $0{,}985$.
+Die orthogonale Rotation verteilt die Varianz gleichmäßig, sodass keine signalschwachen Dimensionen entstehen, deren Bits die Nachbarschaft verrauschen.
+Damit bestätigt Phase~3 die Rolle von TurboQuant als Wegbereiter niedrigbitiger Kompression unter Dimensionsreduktion, die bereits in Phase~2 sichtbar wurde.
+%
+\paragraph{Einfluss der Nachbarschaftsgröße.}
+Die Wahl von $k$ verändert das Bild nur geringfügig.
+Bei $d = 1024$ steigt der Overlap der 1-Bit-Varianten von $k = 5$ zu $k = 20$ leicht an (etwa $0{,}60$ auf $0{,}61$), das heißt die engste Nachbarschaft ist nicht überproportional stärker betroffen als die weitere.
+Abbildung~\ref{fig:phase3_overlap_by_k} zeigt diesen schwachen Zusammenhang über alle Verfahren.
+%
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=\textwidth]{overlap_by_k.pdf}
+  \caption{Neighborhood Overlap als Funktion der Nachbarschaftsgröße $k$ (aggregiert über drei Datensätze, $d = 1024$). Der Overlap ändert sich über $k \in \{5, 10, 20\}$ nur geringfügig.}
+  \label{fig:phase3_overlap_by_k}
+\end{figure}
+%
+\subsection{Pareto-Analyse: Nachbarschaft vs.\ Speicherbedarf}
+%
+Abbildung~\ref{fig:phase3_pareto} zeigt die Pareto-Front für den Overlap in Abhängigkeit vom Speicherbedarf.
+%
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=\textwidth]{neighborhood_pareto_overlap_k20.pdf}
+  \caption{Pareto-Front der Nachbarschaftserhaltung: Overlap als Funktion des Speicherbedarfs (Bit pro Vektor, $k = 20$). Konfigurationen auf der Front sind nicht dominiert.}
+  \label{fig:phase3_pareto}
+\end{figure}
+%
+Die Pareto-Front bestätigt das Bild aus Phase~2.
+Für hohe Nachbarschaftserhaltung ist TQ~4-Bit ab mittleren Dimensionen die effizienteste Wahl; bei extremer Kompression liefert TQ~1-Bit die beste Erhaltung pro Bit, während naive 1-Bit unter Dimensionsreduktion dominiert wird.
+%
+\subsection{Diskussion und Bezug zu den vorherigen Phasen}
+%
+\paragraph{Bestätigung der Phase-1-Hypothese.}
+Phase~1 hatte aus der niedrigen lokalen Dimensionalität (TwoNN $\approx$~11--22) die Hypothese abgeleitet, dass die lokale Nachbarschaftsstruktur die Quantisierung besser übersteht als die globale Distanzstruktur.
+Die durchweg hohe Trustworthiness bestätigt diese Hypothese: Die lokale Struktur, die von wenigen effektiven Dimensionen bestimmt wird, bleibt in dem Sinne intakt, dass kaum falsche Nachbarn entstehen.
+Der gleichzeitige Rückgang des Overlaps zeigt jedoch, dass die exakte Zusammensetzung der Nachbarschaft bei niedrigen Bittiefen dennoch verändert wird.
+%
+\paragraph{Overlap und Trustworthiness gemeinsam.}
+Die Ergebnisse fallen durchgehend in das Muster \enquote{sinkender Overlap bei hoher Trustworthiness}.
+Übertragen auf Retrieval bedeutet dies, dass niedrigbitige Verfahren einzelne relevante Nachbarn verlieren, aber die verbleibenden Treffer relevant bleiben.
+Ob dieser Nachbarverlust die tatsächliche Retrieval-Qualität beeinträchtigt, hängt davon ab, wie viele relevante Dokumente in den Top-$k$ verbleiben, was Phase~4 direkt über Recall und NDCG@10 prüft.
+%
+\paragraph{Zusammenfassung.}
+Phase~3 zeigt, dass die Nachbarschaftserhaltung demselben Grundmuster wie die Distanzerhaltung folgt, das Kriterium aber strenger ist.
+Bittiefen ab 4-Bit erhalten die Nachbarschaft robust, während 1-Bit und 2-Bit einen deutlichen Overlap-Verlust zeigen.
+Die hohe Trustworthiness über alle Verfahren ist der für Retrieval entscheidende Befund, da eingeführte falsche Nachbarn die schädlichere Fehlerform wären.
+Unter Dimensionsreduktion wiederholt sich das Verdünnungsparadox, und TurboQuant übernimmt erneut die Rolle des Wegbereiters niedrigbitiger Kompression.
+%
 \section{Phase~6: Praktische Anwendungsfall- und Skalierungsanalyse}
 \label{sec:ergebnisse_phase6}
 %
