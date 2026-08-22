@@ -520,11 +520,13 @@ Bis hinunter zu 4-Bit ist der Retrieval-Qualitätsverlust vernachlässigbar: Flo
 2-Bit liegt mit etwa 97\,\% weiterhin nahe an der Referenz.
 Erst 1-Bit zeigt einen deutlichen Abfall auf 87--90\,\%.
 Bemerkenswert ist, dass dieser Qualitätsverlust milder ausfällt als der Rückgang der Nachbarschaftserhaltung aus Phase~3: Während der Overlap bei 1-Bit auf rund 60\,\% fiel, bleibt die NDCG@10 bei etwa 88\,\%.
+Beide Werte messen allerdings gegen unterschiedliche Referenzen: Der Overlap vergleicht gegen die Float32-Nachbarschaft, die NDCG@10 gegen die menschlichen Relevanzurteile.
+Da Float32 selbst kein perfektes Relevanzmaß ist, bedeutet eine verschobene Nachbarschaft nicht zwangsläufig einen Relevanzverlust; die durch Quantisierung ausgetauschten Nachbarn sind für die Suchaufgabe oft gleichwertig.
 Dies bestätigt die zentrale Beobachtung aus Phase~3: Quantisierung verliert einzelne Nachbarn, aber die verbleibenden Treffer sind relevant genug, um die Rankingqualität weitgehend zu erhalten.
 %
 \paragraph{Statistische Signifikanz.}
 Der Wilcoxon-Test stützt dieses Bild.
-Die Unterschiede von Float16, 8-Bit, 4-Bit und in den meisten Fällen auch 2-Bit gegenüber Float32 sind nach Bonferroni-Korrektur nicht signifikant; die Verfahren sind statistisch nicht von der Referenz unterscheidbar.
+Die Unterschiede von Float16, 8-Bit, 4-Bit und in den meisten Fällen auch 2-Bit gegenüber Float32 sind nach Bonferroni-Korrektur nicht signifikant; ein Qualitätsunterschied zur Referenz ist statistisch nicht nachweisbar.
 Erst die 1-Bit-Varianten weichen deutlich ab: TQ~1-Bit ist über alle drei Datensätze signifikant schlechter als Float32, naive 1-Bit auf zwei der drei Datensätze (auf TREC-COVID wird die korrigierte Schwelle knapp verfehlt).
 Die Kompression auf 4-Bit oder 2-Bit verursacht damit keinen statistisch belegbaren Qualitätsverlust, während 1-Bit einen weitgehend query-robusten, echten Verlust erzeugt.
 %
@@ -590,16 +592,18 @@ Die konkreten Arbeitspunkte für praktische Einsatzszenarien werden in Phase~6 a
 %
 \subsection{Diskussion und Bezug zu den vorherigen Phasen}
 %
-\paragraph{Geschlossene Kausalkette.}
-Phase~4 schließt die Kette von der Raumgeometrie bis zur Suchqualität.
-Die günstigen Raumeigenschaften aus Phase~1 (Symmetrie, Normierung, niedrige lokale Dimensionalität) sagten voraus, dass Quantisierung die Struktur weitgehend erhält.
+\paragraph{Geschlossene Erklärungskette.}
+Phase~4 schließt die Argumentationskette von der Raumgeometrie bis zur Suchqualität.
+Die günstigen Raumeigenschaften aus Phase~1 (Symmetrie, Normierung, niedrige lokale Dimensionalität) führten zu der Vorhersage, dass Quantisierung die Struktur weitgehend erhält.
 Die Phasen~2 und~3 bestätigten dies für Distanzen und Nachbarschaften, wobei die Nachbarschaftserhaltung das strengere Kriterium war.
 Phase~4 zeigt nun, dass die tatsächliche Retrieval-Qualität sogar robuster ist als die Nachbarschaftserhaltung vermuten ließ: Der für Retrieval entscheidende Faktor ist nicht, ob alle Nachbarn erhalten bleiben, sondern ob die verbleibenden relevant sind.
+Die durchgehende Übereinstimmung von Vorhersage und Messung über alle Phasen stützt die Erklärung, auch wenn sie einen kausalen Zusammenhang nicht beweist.
 %
 \paragraph{Praktische Konsequenz.}
-Bis 4-Bit ist Quantisierung praktisch verlustfrei und statistisch nicht von Float32 unterscheidbar, bei einem Kompressionsfaktor von~8.
+Bis 4-Bit ist Quantisierung praktisch verlustfrei, ohne statistisch nachweisbaren Unterschied zu Float32, bei einem Kompressionsfaktor von~8.
 2-Bit verursacht einen kleinen, meist nicht signifikanten Verlust bei Kompressionsfaktor~16.
 Erst 1-Bit erzeugt einen signifikanten, aber mit rund 88\,\% relativer Qualität keineswegs katastrophalen Abfall bei Kompressionsfaktor~32.
+Diese Werte gelten für das untersuchte Modell \texttt{bge-large-en-v1.5} und die exakte Brute-Force-Suche; unter anderen Modellen oder approximativer Indexierung können sie abweichen.
 Welche dieser Stufen für welchen Einsatzkontext sinnvoll ist, überführt Phase~6 in konkrete Anwendungsszenarien.
 %
 \paragraph{Zusammenfassung.}
