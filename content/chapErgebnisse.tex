@@ -384,15 +384,17 @@ Tabelle~\ref{tab:phase3_fulldim} zeigt Overlap und Trustworthiness bei $d = 1024
 Der Overlap fällt mit sinkender Bittiefe deutlich steiler ab als die Distanzkorrelation aus Phase~2.
 Float16 und 8-Bit erhalten die Nachbarschaft nahezu vollständig (Overlap $> 0{,}99$), 4-Bit bleibt mit $0{,}936$ auf hohem Niveau.
 Bei 2-Bit verbleiben nur noch etwa 71\,\% und bei 1-Bit rund 60\,\% der ursprünglichen Nachbarn.
-Zum Vergleich: Dieselben Verfahren erreichten in Phase~2 bei $d = 1024$ noch Distanzkorrelationen um $r \approx 0{,}92$.
-Die lokale Nachbarschaft ist damit das strengere Kriterium; eine gut erhaltene globale Distanzstruktur garantiert noch keine identische Nachbarschaft, da bei kleinen Distanzunterschieden bereits geringe Verzerrungen die Rangfolge der nächsten Nachbarn verändern.
+Zum Vergleich erreichten dieselben Verfahren in Phase~2 bei $d = 1024$ noch Distanzkorrelationen um $r \approx 0{,}92$.
+Beide Zahlen sind nicht direkt kommensurabel, da Overlap ein linearer Anteil und Pearson~$r$ ein Korrelationskoeffizient ist; der Vergleich ist daher illustrativ, nicht als exaktes Verhältnis zu lesen.
+Inhaltlich ist die lokale Nachbarschaft jedoch das strengere Kriterium: Eine gut erhaltene globale Distanzstruktur garantiert noch keine identische Nachbarschaft, da bei kleinen Distanzunterschieden bereits geringe Verzerrungen die Rangfolge der nächsten Nachbarn verändern.
 %
-\paragraph{Trustworthiness: kaum falsche Nachbarn.}
+\paragraph{Trustworthiness: nur rang-nahe Vertauschungen.}
 Das zentrale Ergebnis der Phase~3 ist der Kontrast zwischen Overlap und Trustworthiness.
 Während der Overlap bei niedrigen Bittiefen deutlich einbricht, bleibt die Trustworthiness durchgehend nahe~1 und fällt selbst bei 1-Bit nicht unter $0{,}998$.
-Das bedeutet: Quantisierung \emph{verliert} zwar echte Nachbarn, führt aber kaum \emph{falsche} Nachbarn ein.
-Die wenigen Dokumente, die neu in die Top-$k$ gelangen, stammen fast ausschließlich aus Rängen knapp außerhalb der Nachbarschaft; im Float-Raum weit entfernte Dokumente erscheinen praktisch nie in der engsten Nachbarschaft.
-Für Retrieval ist dies die günstigere Fehlerform, da die angezeigten Treffer relevant bleiben, auch wenn einzelne echte Nachbarn fehlen.
+Da Trustworthiness eingeführte Nachbarn proportional zu ihrer Float-Rangdistanz bestraft, bedeutet dieser hohe Wert nicht, dass die Nachbarschaft kaum verändert wird, sondern dass die ausgetauschten Nachbarn fast ausschließlich aus Rängen knapp außerhalb der Nachbarschaft stammen.
+Im Float-Raum weit entfernte Dokumente erscheinen praktisch nie in der engsten Nachbarschaft.
+Der sinkende Overlap beschreibt somit die Recall-Perspektive, also den Verlust echter Nachbarn, während die hohe Trustworthiness die Precision-Perspektive abdeckt: Es werden keine grob falschen Nachbarn eingeführt.
+Für Retrieval ist dies die günstigere Kombination, da die angezeigten Treffer relevant bleiben, auch wenn einzelne echte Nachbarn fehlen.
 %
 \paragraph{Konvergenz von TurboQuant und naiver Quantisierung.}
 Wie schon in Phase~2 bei voller Dimensionszahl sind naive und rotierte Varianten nahezu identisch (etwa $0{,}605$ gegenüber $0{,}604$ bei 1-Bit).
@@ -465,8 +467,8 @@ Für hohe Nachbarschaftserhaltung ist TQ~4-Bit ab mittleren Dimensionen die effi
 %
 \paragraph{Bestätigung der Phase-1-Hypothese.}
 Phase~1 hatte aus der niedrigen lokalen Dimensionalität (TwoNN $\approx$~11--22) die Hypothese abgeleitet, dass die lokale Nachbarschaftsstruktur die Quantisierung besser übersteht als die globale Distanzstruktur.
-Die durchweg hohe Trustworthiness bestätigt diese Hypothese: Die lokale Struktur, die von wenigen effektiven Dimensionen bestimmt wird, bleibt in dem Sinne intakt, dass kaum falsche Nachbarn entstehen.
-Der gleichzeitige Rückgang des Overlaps zeigt jedoch, dass die exakte Zusammensetzung der Nachbarschaft bei niedrigen Bittiefen dennoch verändert wird.
+Die Ergebnisse bestätigen diese Hypothese differenziert: Die durchweg hohe Trustworthiness zeigt, dass keine grob falschen Nachbarn eingeführt werden, die lokale Struktur in diesem Sinne also stabil bleibt.
+Der gleichzeitige Rückgang des Overlaps zeigt jedoch, dass die exakte Zusammensetzung der Nachbarschaft bei niedrigen Bittiefen dennoch verändert wird; erhalten bleibt die grobe lokale Anordnung, nicht die exakte Nachbarmenge.
 %
 \paragraph{Overlap und Trustworthiness gemeinsam.}
 Die Ergebnisse fallen durchgehend in das Muster \enquote{sinkender Overlap bei hoher Trustworthiness}.
