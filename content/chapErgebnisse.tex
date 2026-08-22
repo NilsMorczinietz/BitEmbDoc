@@ -8,7 +8,7 @@ Die Darstellung folgt der Phasenstruktur des Experiments: Für jede Phase werden
 \label{sec:ergebnisse_phase1}
 %
 Phase~1 analysiert den unkomprimierten Float-Raum, um Erwartungen an das Quantisierungsverhalten zu formulieren.
-Die Ergebnisse zeigen, dass der von \texttt{bge-large-en-v1.5} erzeugte Embedding-Raum Eigenschaften besitzt, die Quantisierung systematisch begünstigen.
+Die Ergebnisse zeigen, dass der von \texttt{bge-large-en-v1.5} erzeugte Embedding-Raum Eigenschaften besitzt, die eine gute Quantisierbarkeit erwarten lassen.
 %
 \subsection{Normverteilung}
 %
@@ -75,9 +75,10 @@ Die nahezu symmetrischen Verteilungen um Null haben zwei konkrete Implikationen 
 %
 Erstens: Bei der Binarisierung wird der Schwellwert bei $x_i = 0$ gesetzt, positiv wird zu~1, negativ zu~0.
 Bei einer symmetrischen Verteilung teilt dieser Schwellwert die Werte in zwei annähernd gleich große Hälften.
-Damit trägt jedes Bit maximale Information (Entropie nahe~1).
+Damit trägt jedes einzelne Bit nahezu maximale Information (marginale Entropie nahe~1).
 Wären Dimensionen stark schief, würde z.\,B.\ eine 80/20-Aufteilung entstehen, und das Bit wäre weniger informativ.
-Da hier keine solche Schiefe vorliegt, arbeitet die Binarisierung unter optimalen Bedingungen.
+Diese Aussage betrifft die Randverteilung jeder Dimension; ob die Bits untereinander unkorreliert sind und damit auch gemeinsam maximale Information tragen, wird in Phase~1 nicht untersucht.
+Da hier keine problematische Schiefe vorliegt, arbeitet die Binarisierung zumindest bezüglich der Schwellenwahl unter günstigen Bedingungen.
 %
 Zweitens: Die niedrige Kurtosis bedeutet, dass keine Dimension Ausreißer aufweist, die bei uniformer Quantisierung mit wenigen Stufen (z.\,B.\ 4~Stufen bei 2-Bit) zu großen Fehlern führen würden.
 Bei hoher Kurtosis würden einzelne extreme Werte den Wertebereich aufblähen und die wenigen Stufen fast leer bleiben.
@@ -129,7 +130,8 @@ Der niedrige Wert zeigt, dass semantisch ähnliche Dokumente sich nur entlang we
 %
 PCA misst hingegen die globale lineare Dimensionalität: Wie viele orthogonale Richtungen sind nötig, um die Gesamtstreuung aller Punkte zu erfassen?
 Der hohe Wert zeigt, dass die Mannigfaltigkeit zwar lokal flach ist, aber global viele verschiedene Orientierungen einnimmt.
-Das Bild ist das einer gekrümmten Mannigfaltigkeit, die in einen hochdimensionalen Raum eingebettet ist.
+Die naheliegende Deutung ist die einer gekrümmten Mannigfaltigkeit, die in einen hochdimensionalen Raum eingebettet ist.
+Da TwoNN als lokaler Maximum-Likelihood-Schätzer eigene Verteilungsannahmen trifft und bei hochdimensionalen, verrauschten Daten zur Unterschätzung neigt, ist der absolute Wert mit Vorsicht zu lesen; für die hier gezogene Schlussfolgerung genügt jedoch die klare Größenordnungsdifferenz zwischen lokaler und globaler Dimensionalität.
 %
 \paragraph{Implikationen für die Dimensionsreduktion.}
 Aus den PCA-Ergebnissen lassen sich quantitative Vorhersagen für die nachfolgenden Phasen ableiten.
@@ -154,7 +156,7 @@ Diese Hypothese wird in Phase~3 empirisch geprüft.
 \subsection{Zusammenfassung und Vorhersagen}
 \label{sec:ergebnisse_phase1_vorhersagen}
 %
-Die Charakterisierung ergibt ein konsistentes Bild: Der Embedding-Raum von \texttt{bge-large-en-v1.5} besitzt drei Eigenschaften, die Quantisierung systematisch begünstigen:
+Die Charakterisierung ergibt ein konsistentes Bild: Der Embedding-Raum von \texttt{bge-large-en-v1.5} besitzt drei Eigenschaften, die aus theoretischer Sicht eine gute Quantisierbarkeit erwarten lassen:
 \begin{enumerate}
   \item \textbf{Perfekte Normierung:} Die Binarisierung verliert keine Norminformation.
   \item \textbf{Symmetrische, nahezu normalverteilte Dimensionen ohne schwere Ränder:} Der Vorzeichenschwellwert liegt optimal, und uniforme Quantisierung verursacht keine Ausreißer-Fehler.
@@ -164,7 +166,7 @@ Die Charakterisierung ergibt ein konsistentes Bild: Der Embedding-Raum von \text
 Daraus ergeben sich testbare Vorhersagen für die nachfolgenden Phasen:
 \begin{itemize}
   \item Selbst die naive Binarisierung sollte aufgrund der günstigen Raumeigenschaften eine nicht-triviale Distanz- und Nachbarschaftserhaltung zeigen.
-  \item Der Vorteil von TurboQuant gegenüber naiver Quantisierung sollte moderat ausfallen, da der Raum bereits gleichmäßig genutzt wird und die Varianzumverteilung durch Rotation weniger Verbesserungspotenzial bietet.
+  \item Der Vorteil von TurboQuant gegenüber naiver Quantisierung sollte moderat ausfallen, da die einzelnen Dimensionen bereits symmetrisch und ausreißerarm verteilt sind und die Rotation an dieser günstigen Ausgangslage pro Dimension wenig verbessern kann. Diese Erwartung betrifft die volle Dimensionszahl; unter Dimensionsreduktion kann die Rotation stärker wirken, da PCA die Varianz ungleich über die Komponenten verteilt.
   \item PCA-Reduktion auf $d \geq 384$ sollte bei allen Quantisierungsstufen nur marginale Qualitätsverluste verursachen.
   \item Die stärksten Qualitätseinbrüche werden bei $d \leq 128$ erwartet, wo rund 30\,\% ($d = 128$) bis über 40\,\% ($d = 64$) der Varianz verloren gehen.
 \end{itemize}
