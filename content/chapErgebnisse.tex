@@ -22,25 +22,22 @@ Tabelle~\ref{tab:phase1_norms} fasst die Normstatistiken über alle drei Datens�
     \toprule
     Datensatz & $\mu$ & $\sigma$ & CV \\
     \midrule
-    SciFact     & $1{,}0$ & $2{,}93 \times 10^{-8}$ & $2{,}93 \times 10^{-8}$ \\
-    FiQA        & $1{,}0$ & $2{,}96 \times 10^{-8}$ & $2{,}96 \times 10^{-8}$ \\
-    TREC-COVID  & $1{,}0$ & $3{,}03 \times 10^{-8}$ & $3{,}03 \times 10^{-8}$ \\
+    SciFact     & $1{,}0$ & $3{,}05 \times 10^{-8}$ & $3{,}05 \times 10^{-8}$ \\
+    FiQA        & $1{,}0$ & $2{,}99 \times 10^{-8}$ & $2{,}99 \times 10^{-8}$ \\
+    TREC-COVID  & $1{,}0$ & $3{,}04 \times 10^{-8}$ & $3{,}04 \times 10^{-8}$ \\
     \bottomrule
   \end{tabular}
 \end{table}
 %
-Alle Normen liegen bei exakt~1{,}0.
+Alle Normen liegen bis auf Float32-Maschinengenauigkeit bei~1{,}0 (gemessener Bereich $[0{,}9999999,\ 1{,}0000001]$).
 Die Variationskoeffizienten von $\text{CV} \approx 3 \times 10^{-8}$ liegen in der Größenordnung der Float32-Maschinengenauigkeit ($\epsilon_{\text{float32}} \approx 1{,}2 \times 10^{-7}$) und stellen damit numerisches Rauschen dar, keine inhaltliche Variation.
-Die Vektoren liegen exakt auf der Einheitshypersphäre.
+Die Vektoren liegen damit auf der Einheitshypersphäre.
 %
 \paragraph{Interpretation.}
-Für die Binarisierung ist dieses Ergebnis direkt relevant.
-Die Vorzeichenfunktion verwirft die gesamte Norminformation (vgl.\ Abschnitt~\ref{sec:methodik_phase1}).
-Ob dabei Information verloren geht, hängt davon ab, ob die Norm überhaupt Unterscheidungskraft zwischen Dokumenten trägt.
-Bei perfekter Normierung ist dies nicht der Fall -- die Norm ist für alle Vektoren identisch und enthält keinen Informationsgehalt.
-%
-Der einzige Informationsverlust durch Binarisierung betrifft somit die konkreten Zahlenwerte innerhalb der einzelnen Dimensionen: Wie weit ein Wert von Null entfernt ist, geht verloren; nur das Vorzeichen bleibt erhalten.
-Diese günstige Voraussetzung ist keine Selbstverständlichkeit -- Embedding-Modelle ohne explizite L2-Normierung würden hier anders abschneiden.
+Die Binarisierung verwirft die gesamte Norminformation (vgl.\ Abschnitt~\ref{sec:methodik_phase1}).
+Ein Informationsverlust entsteht dadurch nur, wenn die Norm Unterscheidungskraft zwischen Dokumenten trägt -- bei konstanter Norm ist das nicht der Fall.
+Der einzige verlustbehaftete Anteil der Binarisierung betrifft somit die Beträge innerhalb der Dimensionen: Wie weit ein Wert von Null entfernt ist, geht verloren, das Vorzeichen bleibt erhalten.
+Diese günstige Voraussetzung ist keine Selbstverständlichkeit; Embedding-Modelle ohne explizite L2-Normierung würden hier anders abschneiden.
 %
 \subsection{Dimensionsstatistiken}
 %
@@ -87,7 +84,6 @@ Bei hoher Kurtosis würden einzelne extreme Werte den Wertebereich aufblähen un
 Das ist hier nicht der Fall -- die gleichmäßige Stufenverteilung von TurboQuant ist für diesen Raum gut geeignet.
 %
 Die Konsistenz über drei unterschiedliche Domänen (Naturwissenschaft, Finanz, Biomedizin) deutet darauf hin, dass diese Eigenschaften vom Modell und nicht vom Datensatz bestimmt werden.
-Dies ist plausibel, da das Training über diverse Korpora hinweg eine symmetrische Nutzung des Raums erzwingt.
 %
 \subsection{Intrinsische Dimensionalität}
 \label{sec:ergebnisse_intdim}
@@ -97,15 +93,15 @@ Das zugehörige PCA-Varianzspektrum und die kumulative erklärte Varianz sind in
 %
 \begin{table}[htbp]
   \centering
-  \caption{Intrinsische Dimensionalität: TwoNN (lokale Mannigfaltigkeitsstruktur) und PCA (globale lineare Dimensionalität, 95\% erklärte Varianz). Ergänzend die kumulative Varianz bei ausgewählten Komponentenzahlen.}
+  \caption{Intrinsische Dimensionalität: TwoNN (lokale Mannigfaltigkeitsstruktur) und PCA (globale lineare Dimensionalität, 95\% erklärte Varianz). Ergänzend die kumulative erklärte Varianz $V(d)$ an den evaluierten Reduktionszielen.}
   \label{tab:phase1_intdim}
   \begin{tabular}{lccccc}
     \toprule
-    Datensatz & TwoNN & PCA$_{95\%}$ & $V(50)$ & $V(100)$ & $V(256)$ \\
+    Datensatz & TwoNN & PCA$_{95\%}$ & $V(64)$ & $V(256)$ & $V(384)$ \\
     \midrule
-    SciFact     & 13{,}2 & 390 & 50{,}0\,\% & 65{,}2\,\% & 87{,}4\,\% \\
-    FiQA        & 22{,}1 & 395 & 52{,}7\,\% & 67{,}0\,\% & 87{,}8\,\% \\
-    TREC-COVID  & 11{,}1 & 417 & 50{,}0\,\% & 63{,}8\,\% & 85{,}4\,\% \\
+    SciFact     & 13{,}2 & 390 & 55{,}1\,\% & 87{,}4\,\% & 94{,}8\,\% \\
+    FiQA        & 22{,}1 & 395 & 57{,}6\,\% & 87{,}8\,\% & 94{,}6\,\% \\
+    TREC-COVID  & 11{,}4 & 417 & 54{,}6\,\% & 85{,}4\,\% & 93{,}7\,\% \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -137,14 +133,13 @@ Das Bild ist das einer gekrümmten Mannigfaltigkeit, die in einen hochdimensiona
 %
 \paragraph{Implikationen für die Dimensionsreduktion.}
 Aus den PCA-Ergebnissen lassen sich quantitative Vorhersagen für die nachfolgenden Phasen ableiten.
-Die Tabelle liefert direkte Werte für $d = 50$, $d = 100$ und $d = 256$; für $d = 64$ und $d = 384$ wird linear interpoliert:
+Tabelle~\ref{tab:phase1_intdim} berichtet die kumulative erklärte Varianz an den evaluierten Reduktionszielen:
 \begin{itemize}
-  \item \textbf{$d = 384$:} Interpoliert man zwischen $V(256) \approx 86\,\%$ und dem 95\,\%-Punkt bei $\approx\!400$ Komponenten, ergibt sich eine geschätzte erklärte Varianz von ca.\ 93--94\,\%.
-  Eine moderate, aber keine drastische Qualitätsreduktion ist zu erwarten.
-  \item \textbf{$d = 256$:} Bei 256 Komponenten verbleiben 85--88\,\% der Varianz.
+  \item \textbf{$d = 384$:} Mit 93{,}7--94{,}8\,\% erklärter Varianz bleibt fast die gesamte Streuung erhalten.
+  Nur eine marginale Qualitätsreduktion ist zu erwarten.
+  \item \textbf{$d = 256$:} Bei 256 Komponenten verbleiben 85{,}4--87{,}8\,\% der Varianz.
   Hier beginnt der Bereich, in dem spürbarer Informationsverlust einsetzt.
-  \item \textbf{$d = 64$:} Interpoliert aus $V(50) \approx 50\,\%$ und $V(100) \approx 65\,\%$ ergibt sich $V(64) \approx 54\,\%$.
-  Fast die Hälfte der Gesamtvarianz geht verloren -- ein deutlicher Qualitätsverlust ist zu erwarten.
+  \item \textbf{$d = 64$:} Mit nur 54{,}6--57{,}6\,\% erklärter Varianz geht fast die Hälfte der Gesamtstreuung verloren -- ein deutlicher Qualitätsverlust ist zu erwarten.
 \end{itemize}
 %
 \paragraph{Implikationen für die Quantisierung.}
@@ -162,7 +157,7 @@ Diese Hypothese wird in Phase~3 empirisch geprüft.
 Die Charakterisierung ergibt ein konsistentes Bild: Der Embedding-Raum von \texttt{bge-large-en-v1.5} besitzt drei Eigenschaften, die Quantisierung systematisch begünstigen:
 \begin{enumerate}
   \item \textbf{Perfekte Normierung} -- die Binarisierung verliert keine Norminformation.
-  \item \textbf{Symmetrische, leicht-schwänzige Dimensionen} -- der Vorzeichenschwellwert liegt optimal, und uniforme Quantisierung verursacht keine Ausreißer-Fehler.
+  \item \textbf{Symmetrische, nahezu normalverteilte Dimensionen ohne schwere Ränder} -- der Vorzeichenschwellwert liegt optimal, und uniforme Quantisierung verursacht keine Ausreißer-Fehler.
   \item \textbf{Hohe Redundanz} -- die intrinsische Dimensionalität liegt weit unter der nominalen, sodass Kompression über beide Achsen (Bittiefe und Dimensionszahl) möglich ist.
 \end{enumerate}
 %
@@ -171,7 +166,7 @@ Daraus ergeben sich testbare Vorhersagen für die nachfolgenden Phasen:
   \item Selbst die naive Binarisierung sollte aufgrund der günstigen Raumeigenschaften eine nicht-triviale Distanz- und Nachbarschaftserhaltung zeigen.
   \item Der Vorteil von TurboQuant gegenüber naiver Quantisierung sollte moderat ausfallen, da der Raum bereits gleichmäßig genutzt wird und die Varianzumverteilung durch Rotation weniger Verbesserungspotenzial bietet.
   \item PCA-Reduktion auf $d \geq 384$ sollte bei allen Quantisierungsstufen nur marginale Qualitätsverluste verursachen.
-  \item Die stärksten Qualitätseinbrüche werden bei $d \leq 128$ erwartet, wo mehr als 30\,\% der Varianz verloren gehen.
+  \item Die stärksten Qualitätseinbrüche werden bei $d \leq 128$ erwartet, wo rund 30\,\% ($d = 128$) bis über 40\,\% ($d = 64$) der Varianz verloren gehen.
 \end{itemize}
 %
 Ob diese Vorhersagen zutreffen, wird in den Phasen~2 bis~4 empirisch überprüft.
@@ -219,7 +214,7 @@ Bei voller Dimensionszahl ergibt sich eine klare Stufung: Float16 und 8-Bit sind
 Ein bemerkenswertes Ergebnis ist, dass TurboQuant bei voller Dimensionszahl \emph{keinen} Vorteil gegenüber naiver Quantisierung bietet.
 Bei 8-Bit und 4-Bit sind die Werte nahezu identisch; bei 2-Bit und 1-Bit ist naive Quantisierung sogar geringfügig besser.
 Dies erklärt sich aus der in Phase~1 beobachteten Raumstruktur: Die Dimensionen des Modells sind bereits annähernd symmetrisch und gleichmäßig verteilt.
-Die Hadamard-Rotation von TurboQuant, die darauf abzielt, ungleichmäßige Varianz zu verteilen, findet hier kaum Optimierungspotenzial.
+Die orthogonale Rotation von TurboQuant, die darauf abzielt, ungleichmäßige Varianz zu verteilen, findet hier kaum Optimierungspotenzial.
 Bei 1-Bit zeigt sich sogar ein leichter Nachteil ($r = 0{,}92$ vs.\ $0{,}93$), weil die Rotation bei ohnehin binärer Quantisierung zusätzliche Korrelationen zwischen den Bits einführen kann, ohne die Vorzeichenstruktur zu verbessern.
 %
 Dies bestätigt die in Abschnitt~\ref{sec:ergebnisse_phase1_vorhersagen} formulierte Vorhersage, dass der Vorteil von TurboQuant moderat ausfallen sollte.
@@ -276,7 +271,7 @@ Bei 1-Bit verliert jede Dimension ihre Magnitude -- ein schwaches Signal in Dime
 \paragraph{TurboQuant 1-Bit: Auflösung des Paradoxes.}
 TQ~1-Bit zeigt das Paradox nicht.
 Die Korrelation steigt monoton von $r \approx 0{,}79$ bei $d = 64$ auf $r \approx 0{,}93$ bei $d = 768$ und konvergiert bei $d = 1024$ mit der naiven Variante.
-Die Hadamard-Rotation von TurboQuant verteilt die Varianz gleichmäßig über alle Dimensionen.
+Die orthogonale Rotation von TurboQuant verteilt die Varianz gleichmäßig über alle Dimensionen.
 Nach der Rotation trägt jede Dimension einen vergleichbaren Informationsanteil -- es gibt keine "nutzlosen" Dimensionen mehr, deren Bits nur Rauschen beitragen.
 Damit wird der Verdünnungseffekt aufgelöst.
 %
