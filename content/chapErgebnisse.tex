@@ -224,6 +224,7 @@ Bei voller Dimensionszahl fällt er sogar gänzlich weg; die Rotation zahlt sich
 \label{sec:ergebnisse_phase2_dim}
 %
 Abbildung~\ref{fig:phase2_pearson_by_dim} zeigt den Pearson-Korrelationskoeffizienten als Funktion der PCA-Dimensionszahl für alle Quantisierungsstufen.
+Die folgende Darstellung stützt sich auf Pearson~$r$; die für Retrieval eigentlich relevantere Rangkorrelation Spearman~$\rho$ (Abbildung~\ref{fig:phase2_spearman_by_dim}) verläuft nahezu deckungsgleich, sodass die Wahl der Metrik für die Interpretation unkritisch ist.
 Die zentrale Beobachtung ist, dass die verschiedenen Bittiefen sehr unterschiedlich auf Dimensionsreduktion reagieren.
 %
 \begin{figure}[htbp]
@@ -257,7 +258,7 @@ Das auffälligste Ergebnis der gesamten Phase~2 betrifft die naive 1-Bit-Quantis
 Entgegen der naiven Erwartung, dass mehr Dimensionen stets mehr Information bedeuten, \emph{sinkt} die Korrelation mit steigender PCA-Dimension: von $r \approx 0{,}45$ bei $d = 64$ auf $r \approx 0{,}20$ bei $d = 768$.
 Erst bei $d = 1024$ (ohne PCA) springt der Wert auf $r \approx 0{,}93$.
 %
-Dieses Verhalten lässt sich wie folgt erklären.
+Dieses Verhalten lässt sich plausibel wie folgt erklären.
 PCA-Projektion auf $d < 1024$ komprimiert die Information in weniger Dimensionen, erhält aber deren Signalstärke; die Werte pro Dimension haben eine ausreichende Varianz, um nach Binarisierung noch unterscheidbar zu sein.
 Bei $d = 1024$ (originaler Raum ohne PCA) liegen die Werte in einem gut verteilten, vom Modell gelernten Raum.
 Im Zwischenbereich ($d = 128$--$768$) entsteht jedoch ein problematischer Zustand: Die PCA-Projektion verteilt die verbleibende Varianz auf mehr Dimensionen als nötig, wobei die hinteren Komponenten immer weniger Signal tragen.
@@ -274,6 +275,7 @@ Die Korrelation steigt monoton von $r \approx 0{,}79$ bei $d = 64$ auf $r \appro
 Die orthogonale Rotation von TurboQuant verteilt die Varianz gleichmäßig über alle Dimensionen.
 Nach der Rotation trägt jede Dimension einen vergleichbaren Informationsanteil; es gibt keine \enquote{nutzlosen} Dimensionen mehr, deren Bits nur Rauschen beitragen.
 Damit wird der Verdünnungseffekt aufgelöst.
+Dass gerade die Gleichverteilung der Varianz durch Rotation das Paradox behebt, stützt die obige Erklärung: Die ungleiche Varianzverteilung über die Dimensionen ist mit hoher Wahrscheinlichkeit die Ursache, auch wenn Phase~2 den Mechanismus nicht durch eine gezielte Ablation einzelner Komponenten isoliert.
 %
 \subsection{Gesamtmatrix und absolute Verzerrung}
 %
@@ -287,6 +289,7 @@ Abbildung~\ref{fig:phase2_heatmap} fasst die gesamte Versuchsmatrix (Repräsenta
 \end{figure}
 %
 Bezüglich MAE und RMSE bestätigen sich die Korrelationsergebnisse.
+Da Float- und komprimierte Distanzen vor dem Vergleich jeweils separat auf $[0, 1]$ normiert werden (vgl.\ Abschnitt~\ref{sec:methodik_phase2}), sind die absoluten MAE-Werte zwischen den Repräsentationen nur eingeschränkt vergleichbar; sie beschreiben die Abweichung nach getrennter Reskalierung, nicht einen absoluten Distanzfehler.
 Die Verhältnisse $\text{RMSE}/\text{MAE}$ liegen für alle Methoden zwischen 1{,}1 und 1{,}3, was auf eine relativ gleichmäßige Fehlerverteilung ohne extreme Ausreißer hindeutet.
 Selbst bei naiver 1-Bit-Quantisierung mit $d = 768$ (dem ungünstigsten Fall) bleibt RMSE/MAE bei~1{,}25.
 Die Fehler sind also nicht durch wenige katastrophal falsche Paare dominiert, sondern verteilen sich gleichmäßig.
