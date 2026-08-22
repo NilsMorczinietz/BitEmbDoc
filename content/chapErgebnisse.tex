@@ -34,13 +34,10 @@ Die Variationskoeffizienten von $\text{CV} \approx 3 \times 10^{-8}$ liegen in d
 Die Vektoren liegen damit auf der Einheitshypersphäre.
 %
 \paragraph{Interpretation.}
-Für die Binarisierung ist dieses Ergebnis direkt relevant.
-Die Vorzeichenfunktion verwirft die gesamte Norminformation (vgl.\ Abschnitt~\ref{sec:methodik_phase1}).
-Ob dabei Information verloren geht, hängt davon ab, ob die Norm überhaupt Unterscheidungskraft zwischen Dokumenten trägt.
-Bei perfekter Normierung ist dies nicht der Fall -- die Norm ist für alle Vektoren identisch und enthält keinen Informationsgehalt.
-%
-Der einzige Informationsverlust durch Binarisierung betrifft somit die konkreten Zahlenwerte innerhalb der einzelnen Dimensionen: Wie weit ein Wert von Null entfernt ist, geht verloren; nur das Vorzeichen bleibt erhalten.
-Diese günstige Voraussetzung ist keine Selbstverständlichkeit -- Embedding-Modelle ohne explizite L2-Normierung würden hier anders abschneiden.
+Die Binarisierung verwirft die gesamte Norminformation (vgl.\ Abschnitt~\ref{sec:methodik_phase1}).
+Ein Informationsverlust entsteht dadurch nur, wenn die Norm Unterscheidungskraft zwischen Dokumenten trägt -- bei konstanter Norm ist das nicht der Fall.
+Der einzige verlustbehaftete Anteil der Binarisierung betrifft somit die Beträge innerhalb der Dimensionen: Wie weit ein Wert von Null entfernt ist, geht verloren, das Vorzeichen bleibt erhalten.
+Diese günstige Voraussetzung ist keine Selbstverständlichkeit; Embedding-Modelle ohne explizite L2-Normierung würden hier anders abschneiden.
 %
 \subsection{Dimensionsstatistiken}
 %
@@ -87,7 +84,6 @@ Bei hoher Kurtosis würden einzelne extreme Werte den Wertebereich aufblähen un
 Das ist hier nicht der Fall -- die gleichmäßige Stufenverteilung von TurboQuant ist für diesen Raum gut geeignet.
 %
 Die Konsistenz über drei unterschiedliche Domänen (Naturwissenschaft, Finanz, Biomedizin) deutet darauf hin, dass diese Eigenschaften vom Modell und nicht vom Datensatz bestimmt werden.
-Dies ist plausibel, da das Training über diverse Korpora hinweg eine symmetrische Nutzung des Raums erzwingt.
 %
 \subsection{Intrinsische Dimensionalität}
 \label{sec:ergebnisse_intdim}
