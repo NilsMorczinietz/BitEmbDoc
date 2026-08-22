@@ -347,3 +347,146 @@ Für hochbitige Verfahren ($\geq 4$~Bit) ist Dimensionsreduktion weitgehend unpr
 Für niedrigbitige Verfahren (1-Bit, 2-Bit) entsteht eine kritische Interaktion, bei der TurboQuant die Rolle eines \emph{enablers} übernimmt: Ohne Rotation kollabiert naive 1-Bit unter PCA, mit Rotation bleibt die Distanzstruktur intakt.
 %
 Ob diese Distanzerhaltung sich auch in korrekte \emph{lokale} Nachbarschaften übersetzt -- die für Retrieval letztlich entscheidend sind -- prüft Phase~3.
+%
+\section{Phase~6: Praktische Anwendungsfall- und Skalierungsanalyse}
+\label{sec:ergebnisse_phase6}
+%
+Phase~6 führt die Ergebnisse der vorherigen Phasen in eine praktische Entscheidungsperspektive über.
+Während Phase~4 die Retrieval-Qualität und Phase~5 den Ressourcenbedarf isoliert messen, fragt Phase~6, welche TurboQuant-Konfigurationen für konkrete Einsatzkontexte sinnvoll sind.
+Die zentrale Beobachtung ist, dass die stärksten Speichergewinne nicht erst bei sehr großen Cloud-Indizes relevant werden, sondern bereits im Bereich mobiler und lokaler Umgebungen.
+%
+\subsection{Szenarioüberblick}
+%
+Tabelle~\ref{tab:phase6_scenarios} fasst die drei ausgewählten Anwendungsszenarien zusammen.
+Die relative Qualität bezieht sich auf NDCG@10 auf SciFact im Vergleich zur Float32-Referenz bei $d = 1024$.
+%
+\begin{table}[htbp]
+  \centering
+  \caption{Praktische TurboQuant-Szenarien in Phase~6. Die Speicherwerte beschreiben den reinen Vektorspeicher ohne Metadaten, Textchunks oder ANN-Zusatzstrukturen.}
+  \label{tab:phase6_scenarios}
+  \begin{tabular}{llccccc}
+    \toprule
+    Szenario & Konfiguration & NDCG@10 & Qualität & Byte/Vektor & 1M & 10M \\
+    \midrule
+    Float32-Referenz & \texttt{float32 1024d} & 0{,}7463 & 100{,}0\,\% & 4096{,}0 & 3{,}81~GiB & 38{,}15~GiB \\
+    Edge/Mobile & \texttt{tq\_1bit 768d} & 0{,}7007 & 93{,}9\,\% & 96{,}0 & 91{,}6~MiB & 0{,}89~GiB \\
+    Business & \texttt{tq\_2bit 1024d} & 0{,}7318 & 98{,}1\,\% & 272{,}4 & 259{,}8~MiB & 2{,}54~GiB \\
+    Enterprise & \texttt{tq\_4bit 1024d} & 0{,}7422 & 99{,}5\,\% & 528{,}4 & 503{,}9~MiB & 4{,}92~GiB \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+%
+Die Float32-Referenz benötigt bei 10~Millionen Vektoren 38{,}15~GiB reinen Vektorspeicher.
+Schon die konservative Enterprise-Konfiguration \texttt{tq\_4bit 1024d} reduziert diesen Wert auf 4{,}92~GiB, ohne die gemessene Retrieval-Qualität nennenswert zu verändern.
+Der Qualitätsverlust beträgt nur etwa 0{,}5~Prozentpunkte relativ zur Float32-Referenz.
+%
+Das Business-Szenario verschiebt den Arbeitspunkt aggressiver: \texttt{tq\_2bit 1024d} benötigt bei 10~Millionen Vektoren nur 2{,}54~GiB und hält dennoch 98{,}1\,\% der Float32-Qualität.
+Für kostenempfindliche Cloud-Suche ist dies der plausibelste Kompromiss, weil der Speicherbedarf um den Faktor~15 sinkt, während der Qualitätsverlust mit 1{,}9\,\% klein bleibt.
+%
+Das Edge/Mobile-Szenario verwendet \texttt{tq\_1bit 768d}.
+Diese Konfiguration ist nicht für maximale Qualität optimiert, sondern für minimale Speichernutzung bei noch brauchbarer Retrieval-Leistung.
+Mit 96~Byte pro Vektor erreicht sie einen Kompressionsfaktor von 42{,}7 gegenüber Float32 und erhält 93{,}9\,\% der Float32-Qualität.
+%
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=\textwidth]{phase6_scenario_memory_comparison.pdf}
+  \caption{Speicherbedarf der Phase-6-Szenarien bei 10~Millionen Vektoren. Die Abbildung zeigt, dass alle TurboQuant-Arbeitspunkte den Float32-Index um eine Größenordnung oder mehr reduzieren.}
+  \label{fig:phase6_memory_comparison}
+\end{figure}
+%
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=\textwidth]{phase6_tradeoff_scenarios_highlighted.pdf}
+  \caption{Qualitäts-Speicher-Trade-off der TurboQuant-Konfigurationen mit den drei Anwendungsszenarien. Die markierten Punkte zeigen, dass die praktische Auswahl nicht entlang einer einzelnen optimalen Konfiguration erfolgt, sondern vom Anwendungskontext abhängt.}
+  \label{fig:phase6_tradeoff_scenarios}
+\end{figure}
+%
+\subsection{Mobile Skalierung unterhalb von 10~Millionen Vektoren}
+%
+Für lokale Anwendungen ist ein 10-Millionen-Vektorindex eher eine Obergrenze als ein typischer Fall.
+Deshalb wird das Edge/Mobile-Szenario zusätzlich unterhalb dieser Grenze betrachtet.
+Tabelle~\ref{tab:phase6_mobile_dims} zeigt den Einfluss der Dimensionszahl für \texttt{tq\_1bit}.
+%
+\begin{table}[htbp]
+  \centering
+  \caption{Dimensionsvergleich für \texttt{tq\_1bit} im mobilen Szenario. Die Qualität bezieht sich auf NDCG@10 relativ zur Float32-1024d-Referenz.}
+  \label{tab:phase6_mobile_dims}
+  \begin{tabular}{ccccc}
+    \toprule
+    Dimension & Byte/Vektor & RAM bei 100k & RAM bei 500k & Qualität \\
+    \midrule
+    64d   & 8   & 0{,}76~MiB & 3{,}8~MiB  & 44{,}7\,\% \\
+    128d  & 16  & 1{,}53~MiB & 7{,}6~MiB  & 72{,}6\,\% \\
+    256d  & 32  & 3{,}05~MiB & 15{,}3~MiB & 84{,}7\,\% \\
+    384d  & 48  & 4{,}58~MiB & 22{,}9~MiB & 90{,}5\,\% \\
+    512d  & 64  & 6{,}10~MiB & 30{,}5~MiB & 90{,}4\,\% \\
+    768d  & 96  & 9{,}16~MiB & 45{,}8~MiB & 93{,}9\,\% \\
+    1024d & 128 & 12{,}21~MiB & 61{,}0~MiB & 90{,}3\,\% \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+%
+Die Tabelle zeigt zwei unterschiedliche Regime.
+Bei sehr harten Speichergrenzen sind 384d und 512d attraktiv: Selbst 500\,000 Vektoren bleiben deutlich unter 64~MiB, während die relative Qualität noch bei etwa 90\,\% liegt.
+Der beste gemessene mobile Arbeitspunkt ist jedoch 768d.
+Er benötigt bei 1~Million Vektoren 91{,}6~MiB und erreicht 93{,}9\,\% der Float32-Qualität.
+Die Erhöhung auf 1024d bringt im SciFact-Ergebnis keinen zusätzlichen Qualitätsgewinn, erhöht aber den Speicherbedarf auf 122{,}1~MiB pro 1~Million Vektoren.
+%
+Abbildung~\ref{fig:phase6_mobile_tq_scaling} erweitert diese Sicht auf alle TurboQuant-Bittiefen bis 8~Bit.
+Für jede Bittiefe werden die Dimensionen als gruppierte Balken über den betrachteten Indexgrößen dargestellt.
+Die Balkenhöhen wachsen linear mit der Vektoranzahl und mit der Dimension; die Legende ergänzt den Speicherblick um die jeweilige Retrieval-Qualität.
+%
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=\textwidth]{phase6_mobile_sub10m_scaling.pdf}
+  \caption{Mobile Speicherskalierung für TurboQuant unterhalb von 10~Millionen Vektoren. Jede Teilgrafik entspricht einer Bittiefe; innerhalb einer Vektoranzahl stehen die Balken für die evaluierten Dimensionszahlen.}
+  \label{fig:phase6_mobile_tq_scaling}
+\end{figure}
+%
+Für das mobile Szenario ist die wichtigste Erkenntnis, dass der reine Vektorspeicher unterhalb von 1~Million Embeddings nicht der dominante Engpass sein muss.
+Bei \texttt{tq\_1bit 768d} belegt ein Index mit 100\,000 Vektoren nur 9{,}16~MiB, 500\,000 Vektoren belegen 45{,}8~MiB und 1~Million Vektoren 91{,}6~MiB.
+Praktische Grenzen entstehen daher eher durch Zusatzstrukturen: ANN-Indizes, Text- und Metadatenhaltung, App-Runtime und Speicherlimits des Betriebssystems.
+Der Bereich von 100\,000 bis 500\,000 Embeddings erscheint als realistischer On-Device-Korridor.
+%
+\subsection{Cloud-Kosten und betriebliche Relevanz}
+%
+Für Cloud-Szenarien übersetzt sich die Speicherreduktion direkt in kleinere Instanzklassen.
+Tabelle~\ref{tab:phase6_aws} zeigt die modellierte Kostenwirkung für einen 10-Millionen-Vektorindex.
+%
+\begin{table}[htbp]
+  \centering
+  \caption{Grobe AWS-Kostenrechnung für einen 10-Millionen-Vektorindex. Die Werte sind als On-Demand-Größenordnung zu interpretieren.}
+  \label{tab:phase6_aws}
+  \begin{tabular}{lcccc}
+    \toprule
+    Szenario & Instanz & RAM & Kosten/Monat & Ersparnis \\
+    \midrule
+    Float32 & \texttt{r6i.2xlarge} & 64~GiB & 368{,}00~USD & -- \\
+    Enterprise & \texttt{m6g.large} & 8~GiB & 49{,}00~USD & 86{,}7\,\% \\
+    Business & \texttt{t4g.medium} & 4~GiB & 24{,}50~USD & 93{,}3\,\% \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+%
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.9\textwidth]{phase6_aws_cost_savings.pdf}
+  \caption{Geschätzte monatliche AWS-Kosten für einen 10-Millionen-Vektorindex. Die Kostenreduktion entsteht nicht durch schnellere Berechnung, sondern durch die Möglichkeit, kleinere speicherärmere Instanzen zu verwenden.}
+  \label{fig:phase6_aws_costs}
+\end{figure}
+%
+Die Kostenrechnung ist nicht als universelle Preisprognose zu verstehen, sondern als Größenordnung.
+Sie zeigt dennoch eine klare betriebliche Konsequenz: \texttt{tq\_2bit 1024d} reduziert den modellierten Monatsbetrag von 368~USD auf 24{,}50~USD.
+Das entspricht einer Ersparnis von 343{,}50~USD pro Monat beziehungsweise 4\,122~USD pro Jahr für einen einzelnen 10-Millionen-Vektorindex.
+Bei mehreren Indizes oder mandantengetrennten Deployments skaliert dieser Effekt entsprechend.
+%
+\subsection{Einordnung}
+%
+Phase~6 bestätigt die praktische Relevanz der in den vorherigen Phasen gemessenen Kompressionseffekte.
+Für hohe Qualitätsanforderungen ist \texttt{tq\_4bit 1024d} die konservative Wahl: Der Speicherbedarf sinkt um den Faktor~7{,}8, während die gemessene Qualität praktisch erhalten bleibt.
+Für kostenoptimierte Cloud-Suche ist \texttt{tq\_2bit 1024d} der stärkere Arbeitspunkt, weil der Speicher um den Faktor~15 sinkt und die Qualität bei 98{,}1\,\% bleibt.
+Für lokale Suche ist \texttt{tq\_1bit 768d} besonders interessant, weil es unterhalb von 1~Million Vektoren in einem Speicherbereich liegt, der auf mobilen Geräten realistisch ist.
+%
+Die naive Quantisierung wird in dieser Phase nicht weiter ausgewertet, weil sie bei gleicher Bittiefe und Dimensionszahl keine andere Speicherrechnung erzeugt.
+Die Abwägung zwischen naiver Quantisierung und TurboQuant ist damit keine Frage des Speichers, sondern der Qualitätsrobustheit.
+Für die praktische Empfehlung ist TurboQuant deshalb der relevantere Kandidat: Es bietet denselben Speicherbedarf wie die naive Variante, vermeidet aber die in Phase~2 beobachteten Instabilitäten bei niedrigen Bittiefen und Dimensionsreduktion.
