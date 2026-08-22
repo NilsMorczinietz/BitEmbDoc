@@ -364,6 +364,7 @@ Die relative Qualität bezieht sich auf NDCG@10 auf SciFact im Vergleich zur Flo
   \centering
   \caption{Praktische TurboQuant-Szenarien in Phase~6. Die Speicherwerte beschreiben den reinen Vektorspeicher ohne Metadaten, Textchunks oder ANN-Zusatzstrukturen.}
   \label{tab:phase6_scenarios}
+  \resizebox{\textwidth}{!}{%
   \begin{tabular}{llccccc}
     \toprule
     Szenario & Konfiguration & NDCG@10 & Qualität & Byte/Vektor & 1M & 10M \\
@@ -374,6 +375,7 @@ Die relative Qualität bezieht sich auf NDCG@10 auf SciFact im Vergleich zur Flo
     Enterprise & \texttt{tq\_4bit 1024d} & 0{,}7422 & 99{,}5\,\% & 528{,}4 & 503{,}9~MiB & 4{,}92~GiB \\
     \bottomrule
   \end{tabular}
+  }
 \end{table}
 %
 Die Float32-Referenz benötigt bei 10~Millionen Vektoren 38{,}15~GiB reinen Vektorspeicher.
