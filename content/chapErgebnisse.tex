@@ -479,6 +479,134 @@ Bittiefen ab 4-Bit erhalten die Nachbarschaft robust, während 1-Bit und 2-Bit e
 Die hohe Trustworthiness über alle Verfahren ist der für Retrieval entscheidende Befund, da eingeführte falsche Nachbarn die schädlichere Fehlerform wären.
 Unter Dimensionsreduktion wiederholt sich das Verdünnungsparadox, und TurboQuant übernimmt erneut die Rolle des Wegbereiters niedrigbitiger Kompression.
 %
+\section{Phase~4: Retrieval-Evaluation}
+\label{sec:ergebnisse_phase4}
+%
+Die Phasen~2 und~3 messen geometrische Strukturerhaltung.
+Phase~4 prüft, ob sich diese Beobachtungen in tatsächlicher Suchqualität niederschlagen, gemessen an den BEIR-Relevanzurteilen.
+Für jede Query wird eine exakte Suche über alle zehn Repräsentationen durchgeführt und mit NDCG@10 als Primärmetrik sowie Recall@10, Recall@100 und MRR bewertet.
+Alle Werte sind über die drei Datensätze gemittelt.
+Die statistische Signifikanz jedes Vergleichs gegen Float32 wird über einen Wilcoxon-Signed-Rank-Test mit Bonferroni-Korrektur ($\alpha_\text{korr} \approx 0{,}0011$) bestimmt.
+%
+\subsection{Retrieval-Qualität bei voller Dimensionszahl}
+\label{sec:ergebnisse_phase4_fulldim}
+%
+Tabelle~\ref{tab:phase4_fulldim} zeigt die Retrieval-Metriken bei $d = 1024$.
+%
+\begin{table}[htbp]
+  \centering
+  \caption{Retrieval-Metriken bei $d = 1024$ (keine Dimensionsreduktion). Mittelwerte über drei Datensätze. Die relative Qualität bezieht sich auf NDCG@10 gegenüber Float32.}
+  \label{tab:phase4_fulldim}
+  \begin{tabular}{lccccc}
+    \toprule
+    Repräsentation & NDCG@10 & rel. & Recall@10 & Recall@100 & MRR \\
+    \midrule
+    Float32         & 0{,}6424 & 100{,}0\,\% & 0{,}469 & 0{,}616 & 0{,}719 \\
+    Float16         & 0{,}6427 & 100{,}0\,\% & 0{,}469 & 0{,}617 & 0{,}719 \\
+    Naive 8-Bit     & 0{,}6425 & 100{,}0\,\% & 0{,}469 & 0{,}617 & 0{,}719 \\
+    TQ 8-Bit        & 0{,}6420 &  99{,}9\,\% & 0{,}469 & 0{,}617 & 0{,}719 \\
+    Naive 4-Bit     & 0{,}6380 &  99{,}3\,\% & 0{,}469 & 0{,}617 & 0{,}717 \\
+    TQ 4-Bit        & 0{,}6417 &  99{,}9\,\% & 0{,}470 & 0{,}615 & 0{,}713 \\
+    Naive 2-Bit     & 0{,}6245 &  97{,}2\,\% & 0{,}454 & 0{,}609 & 0{,}709 \\
+    TQ 2-Bit        & 0{,}6261 &  97{,}4\,\% & 0{,}467 & 0{,}608 & 0{,}709 \\
+    Naive 1-Bit     & 0{,}5755 &  89{,}6\,\% & 0{,}429 & 0{,}580 & 0{,}681 \\
+    TQ 1-Bit        & 0{,}5593 &  87{,}1\,\% & 0{,}428 & 0{,}580 & 0{,}667 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+%
+\paragraph{Qualitätsverlust erst bei 1-Bit deutlich.}
+Bis hinunter zu 4-Bit ist der Retrieval-Qualitätsverlust vernachlässigbar: Float16, 8-Bit und TQ~4-Bit erreichen mindestens 99{,}9\,\% der Float32-NDCG.
+2-Bit liegt mit etwa 97\,\% weiterhin nahe an der Referenz.
+Erst 1-Bit zeigt einen deutlichen Abfall auf 87--90\,\%.
+Bemerkenswert ist, dass dieser Qualitätsverlust milder ausfällt als der Rückgang der Nachbarschaftserhaltung aus Phase~3: Während der Overlap bei 1-Bit auf rund 60\,\% fiel, bleibt die NDCG@10 bei etwa 88\,\%.
+Dies bestätigt die zentrale Beobachtung aus Phase~3: Quantisierung verliert einzelne Nachbarn, aber die verbleibenden Treffer sind relevant genug, um die Rankingqualität weitgehend zu erhalten.
+%
+\paragraph{Statistische Signifikanz.}
+Der Wilcoxon-Test stützt dieses Bild.
+Die Unterschiede von Float16, 8-Bit, 4-Bit und in den meisten Fällen auch 2-Bit gegenüber Float32 sind nach Bonferroni-Korrektur nicht signifikant; die Verfahren sind statistisch nicht von der Referenz unterscheidbar.
+Erst die 1-Bit-Varianten weichen deutlich ab: TQ~1-Bit ist über alle drei Datensätze signifikant schlechter als Float32, naive 1-Bit auf zwei der drei Datensätze (auf TREC-COVID wird die korrigierte Schwelle knapp verfehlt).
+Die Kompression auf 4-Bit oder 2-Bit verursacht damit keinen statistisch belegbaren Qualitätsverlust, während 1-Bit einen weitgehend query-robusten, echten Verlust erzeugt.
+%
+\paragraph{Umkehrung des TurboQuant-Vorteils bei 1-Bit.}
+Bei voller Dimensionszahl ist naive 1-Bit (89{,}6\,\%) geringfügig besser als TQ~1-Bit (87{,}1\,\%).
+Dies ist konsistent mit dem Befund aus Phase~2, dass die Rotation bei ohnehin binärer Quantisierung und voller Dimension keine Vorteile bringt und sogar leichte Bit-Korrelationen einführen kann.
+Für die Multi-Bit-Varianten sind naive und rotierte Version dagegen praktisch gleichwertig.
+%
+\subsection{Einfluss der Dimensionsreduktion}
+\label{sec:ergebnisse_phase4_dim}
+%
+Abbildung~\ref{fig:phase4_ndcg_by_dim} zeigt die NDCG@10 als Funktion der PCA-Dimension.
+%
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=\textwidth]{retrieval_ndcg_at_10_by_dim.pdf}
+  \caption{NDCG@10 als Funktion der PCA-Dimension $d$ (Mittelwert über drei Datensätze). Höhere Bittiefen folgen der Float32-Kurve eng, während 1-Bit deutlich abfällt.}
+  \label{fig:phase4_ndcg_by_dim}
+\end{figure}
+%
+\paragraph{Bittiefe folgt der Float32-Referenz.}
+TQ~4-Bit folgt der Float32-Kurve über den gesamten Dimensionsbereich nahezu deckungsgleich (etwa $0{,}460$ bei $d = 64$ bis $0{,}642$ bei $d = 1024$).
+Auch die Dimensionsreduktion selbst kostet Qualität: Die NDCG@10 der Float32-Referenz sinkt von $0{,}642$ bei $d = 1024$ auf $0{,}465$ bei $d = 64$.
+Dies bestätigt die Vorhersage aus Phase~1, dass eine Reduktion auf $d \leq 128$ die stärksten Einbrüche verursacht, während $d \geq 384$ nur moderate Verluste zeigt.
+%
+\paragraph{Verdünnungsparadox in abgeschwächter Form.}
+Naive 1-Bit zeigt auch im Retrieval das aus den Phasen~2 und~3 bekannte Verdünnungsparadox, jedoch schwächer ausgeprägt.
+Die NDCG@10 steigt zunächst bis $d = 384$ auf $0{,}486$, stagniert dann und springt bei $d = 1024$ auf $0{,}575$.
+TQ~1-Bit dagegen steigt unter Dimensionsreduktion monoton und übertrifft naive 1-Bit bei allen reduzierten Dimensionen deutlich, etwa bei $d = 768$ mit $0{,}591$ gegenüber $0{,}479$.
+Erst bei voller Dimensionszahl kehrt sich dieser Vorteil um.
+Damit überträgt sich das Muster der geometrischen Analysen direkt auf die Suchqualität: TurboQuant ist unter Dimensionsreduktion der Wegbereiter niedrigbitiger Kompression, während naive 1-Bit nur bei voller Dimension konkurrenzfähig ist.
+%
+\subsection{Recall für zweistufige Systeme}
+%
+Abbildung~\ref{fig:phase4_recall100} zeigt Recall@100, die für zweistufige Retrieval-Systeme entscheidende Metrik, in denen eine erste Stufe eine Kandidatenmenge für ein späteres Reranking erzeugt.
+%
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=\textwidth]{retrieval_recall_at_100_by_dim.pdf}
+  \caption{Recall@100 als Funktion der PCA-Dimension $d$ (Mittelwert über drei Datensätze). Auch bei starker Kompression bleibt ein großer Teil der relevanten Dokumente in der Kandidatenmenge.}
+  \label{fig:phase4_recall100}
+\end{figure}
+%
+Der Recall@100 fällt unter Kompression deutlich schwächer ab als die NDCG@10.
+TQ~1-Bit hält bei $d = 768$ einen Recall@100 von $0{,}587$ gegenüber $0{,}616$ bei Float32 ($d = 1024$).
+Das bedeutet, dass die aggressive Kompression zwar die exakte Reihenfolge der Top-Treffer verändert, aber die relevanten Dokumente weiterhin in der breiteren Kandidatenmenge enthält.
+Für zweistufige Systeme, in denen ein präzises Reranking auf Float-Basis nachgeschaltet ist, bleibt selbst TQ~1-Bit damit brauchbar.
+%
+\subsection{Pareto-Analyse: Qualität vs.\ Speicherbedarf}
+%
+Abbildung~\ref{fig:phase4_pareto} zeigt die Pareto-Front der NDCG@10 gegen den Speicherbedarf.
+%
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=\textwidth]{retrieval_pareto_ndcg_at_10.pdf}
+  \caption{Pareto-Front der Retrieval-Qualität: NDCG@10 als Funktion des Speicherbedarfs (Bit pro Vektor). Konfigurationen auf der Front sind nicht dominiert.}
+  \label{fig:phase4_pareto}
+\end{figure}
+%
+Die Pareto-Front fasst den praktischen Trade-off zusammen.
+TQ~4-Bit ab mittleren Dimensionen bildet den qualitativ hochwertigen Arbeitspunkt mit nahezu unverändertem NDCG@10; TQ~2-Bit bietet einen ausgewogenen Kompromiss, und TQ~1-Bit besetzt den Bereich extremer Kompression.
+Die konkreten Arbeitspunkte für praktische Einsatzszenarien werden in Phase~6 aufgegriffen.
+%
+\subsection{Diskussion und Bezug zu den vorherigen Phasen}
+%
+\paragraph{Geschlossene Kausalkette.}
+Phase~4 schließt die Kette von der Raumgeometrie bis zur Suchqualität.
+Die günstigen Raumeigenschaften aus Phase~1 (Symmetrie, Normierung, niedrige lokale Dimensionalität) sagten voraus, dass Quantisierung die Struktur weitgehend erhält.
+Die Phasen~2 und~3 bestätigten dies für Distanzen und Nachbarschaften, wobei die Nachbarschaftserhaltung das strengere Kriterium war.
+Phase~4 zeigt nun, dass die tatsächliche Retrieval-Qualität sogar robuster ist als die Nachbarschaftserhaltung vermuten ließ: Der für Retrieval entscheidende Faktor ist nicht, ob alle Nachbarn erhalten bleiben, sondern ob die verbleibenden relevant sind.
+%
+\paragraph{Praktische Konsequenz.}
+Bis 4-Bit ist Quantisierung praktisch verlustfrei und statistisch nicht von Float32 unterscheidbar, bei einem Kompressionsfaktor von~8.
+2-Bit verursacht einen kleinen, meist nicht signifikanten Verlust bei Kompressionsfaktor~16.
+Erst 1-Bit erzeugt einen signifikanten, aber mit rund 88\,\% relativer Qualität keineswegs katastrophalen Abfall bei Kompressionsfaktor~32.
+Welche dieser Stufen für welchen Einsatzkontext sinnvoll ist, überführt Phase~6 in konkrete Anwendungsszenarien.
+%
+\paragraph{Zusammenfassung.}
+Phase~4 bestätigt die geometrischen Befunde auf der Ebene der Suchqualität.
+Der Qualitätsverlust ist bis 2-Bit gering und statistisch meist nicht belegbar, während 1-Bit einen signifikanten, aber moderaten Abfall zeigt.
+Unter Dimensionsreduktion bleibt TurboQuant der entscheidende Faktor für niedrigbitige Kompression, und der hohe Recall@100 belegt die Eignung stark komprimierter Repräsentationen als erste Stufe zweistufiger Systeme.
+%
 \section{Phase~6: Praktische Anwendungsfall- und Skalierungsanalyse}
 \label{sec:ergebnisse_phase6}
 %
