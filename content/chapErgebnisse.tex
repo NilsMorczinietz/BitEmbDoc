@@ -22,9 +22,9 @@ Tabelle~\ref{tab:phase1_norms} fasst die Normstatistiken über alle drei Datens�
     \toprule
     Datensatz & $\mu$ & $\sigma$ & CV \\
     \midrule
-    SciFact     & $1{,}0$ & $2{,}93 \times 10^{-8}$ & $2{,}93 \times 10^{-8}$ \\
-    FiQA        & $1{,}0$ & $2{,}96 \times 10^{-8}$ & $2{,}96 \times 10^{-8}$ \\
-    TREC-COVID  & $1{,}0$ & $3{,}03 \times 10^{-8}$ & $3{,}03 \times 10^{-8}$ \\
+    SciFact     & $1{,}0$ & $3{,}05 \times 10^{-8}$ & $3{,}05 \times 10^{-8}$ \\
+    FiQA        & $1{,}0$ & $2{,}99 \times 10^{-8}$ & $2{,}99 \times 10^{-8}$ \\
+    TREC-COVID  & $1{,}0$ & $3{,}04 \times 10^{-8}$ & $3{,}04 \times 10^{-8}$ \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -97,15 +97,15 @@ Das zugehörige PCA-Varianzspektrum und die kumulative erklärte Varianz sind in
 %
 \begin{table}[htbp]
   \centering
-  \caption{Intrinsische Dimensionalität: TwoNN (lokale Mannigfaltigkeitsstruktur) und PCA (globale lineare Dimensionalität, 95\% erklärte Varianz). Ergänzend die kumulative Varianz bei ausgewählten Komponentenzahlen.}
+  \caption{Intrinsische Dimensionalität: TwoNN (lokale Mannigfaltigkeitsstruktur) und PCA (globale lineare Dimensionalität, 95\% erklärte Varianz). Ergänzend die kumulative erklärte Varianz $V(d)$ an den evaluierten Reduktionszielen.}
   \label{tab:phase1_intdim}
   \begin{tabular}{lccccc}
     \toprule
-    Datensatz & TwoNN & PCA$_{95\%}$ & $V(50)$ & $V(100)$ & $V(256)$ \\
+    Datensatz & TwoNN & PCA$_{95\%}$ & $V(64)$ & $V(256)$ & $V(384)$ \\
     \midrule
-    SciFact     & 13{,}2 & 390 & 50{,}0\,\% & 65{,}2\,\% & 87{,}4\,\% \\
-    FiQA        & 22{,}1 & 395 & 52{,}7\,\% & 67{,}0\,\% & 87{,}8\,\% \\
-    TREC-COVID  & 11{,}1 & 417 & 50{,}0\,\% & 63{,}8\,\% & 85{,}4\,\% \\
+    SciFact     & 13{,}2 & 390 & 55{,}1\,\% & 87{,}4\,\% & 94{,}8\,\% \\
+    FiQA        & 22{,}1 & 395 & 57{,}6\,\% & 87{,}8\,\% & 94{,}6\,\% \\
+    TREC-COVID  & 11{,}4 & 417 & 54{,}6\,\% & 85{,}4\,\% & 93{,}7\,\% \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -137,14 +137,13 @@ Das Bild ist das einer gekrümmten Mannigfaltigkeit, die in einen hochdimensiona
 %
 \paragraph{Implikationen für die Dimensionsreduktion.}
 Aus den PCA-Ergebnissen lassen sich quantitative Vorhersagen für die nachfolgenden Phasen ableiten.
-Tabelle~\ref{tab:phase1_intdim} berichtet die kumulative Varianz an Stützstellen ($d = 50, 100, 256$); die dazwischenliegenden Reduktionsziele $d = 64$ und $d = 384$ werden linear interpoliert:
+Tabelle~\ref{tab:phase1_intdim} berichtet die kumulative erklärte Varianz an den evaluierten Reduktionszielen:
 \begin{itemize}
-  \item \textbf{$d = 384$:} Zwischen $V(256) \approx 85$--$88\,\%$ und dem 95\,\%-Punkt bei $\approx\!400$ Komponenten ergibt sich eine erklärte Varianz von etwa 93--94\,\%.
-  Eine moderate, aber keine drastische Qualitätsreduktion ist zu erwarten.
-  \item \textbf{$d = 256$:} Bei 256 Komponenten verbleiben 85--88\,\% der Varianz.
+  \item \textbf{$d = 384$:} Mit 93{,}7--94{,}8\,\% erklärter Varianz bleibt fast die gesamte Streuung erhalten.
+  Nur eine marginale Qualitätsreduktion ist zu erwarten.
+  \item \textbf{$d = 256$:} Bei 256 Komponenten verbleiben 85{,}4--87{,}8\,\% der Varianz.
   Hier beginnt der Bereich, in dem spürbarer Informationsverlust einsetzt.
-  \item \textbf{$d = 64$:} Zwischen $V(50) \approx 50\,\%$ und $V(100) \approx 65\,\%$ ergibt sich $V(64) \approx 54\,\%$.
-  Fast die Hälfte der Gesamtvarianz geht verloren -- ein deutlicher Qualitätsverlust ist zu erwarten.
+  \item \textbf{$d = 64$:} Mit nur 54{,}6--57{,}6\,\% erklärter Varianz geht fast die Hälfte der Gesamtstreuung verloren -- ein deutlicher Qualitätsverlust ist zu erwarten.
 \end{itemize}
 %
 \paragraph{Implikationen für die Quantisierung.}
@@ -171,7 +170,7 @@ Daraus ergeben sich testbare Vorhersagen für die nachfolgenden Phasen:
   \item Selbst die naive Binarisierung sollte aufgrund der günstigen Raumeigenschaften eine nicht-triviale Distanz- und Nachbarschaftserhaltung zeigen.
   \item Der Vorteil von TurboQuant gegenüber naiver Quantisierung sollte moderat ausfallen, da der Raum bereits gleichmäßig genutzt wird und die Varianzumverteilung durch Rotation weniger Verbesserungspotenzial bietet.
   \item PCA-Reduktion auf $d \geq 384$ sollte bei allen Quantisierungsstufen nur marginale Qualitätsverluste verursachen.
-  \item Die stärksten Qualitätseinbrüche werden bei $d \leq 128$ erwartet, wo mehr als 30\,\% der Varianz verloren gehen.
+  \item Die stärksten Qualitätseinbrüche werden bei $d \leq 128$ erwartet, wo rund 30\,\% ($d = 128$) bis über 40\,\% ($d = 64$) der Varianz verloren gehen.
 \end{itemize}
 %
 Ob diese Vorhersagen zutreffen, wird in den Phasen~2 bis~4 empirisch überprüft.
