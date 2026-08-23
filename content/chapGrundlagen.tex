@@ -31,6 +31,9 @@ Werte nahe~1 zeigen hohe semantische Ähnlichkeit an, Werte nahe~0 Orthogonalit�
 \par
 Für normierte Vektoren ($\|\mathbf{x}\|_2 = 1$) vereinfacht sich Gleichung~\ref{eq:cosine} zum Skalarprodukt $\mathbf{x} \cdot \mathbf{y}$, was die Berechnung auf eine einzelne Matrixmultiplikation reduziert.
 Moderne Embedding-Modelle erzeugen in der Regel bereits normierte Ausgaben, sodass dieser Spezialfall in der Praxis der Regelfall ist.
+\par
+Für normierte Vektoren besteht zudem ein direkter Zusammenhang zwischen euklidischer Distanz und Cosine-Similarity: Es gilt $\|\mathbf{x} - \mathbf{y}\|_2^2 = 2 - 2\,(\mathbf{x} \cdot \mathbf{y})$.
+Beide Maße induzieren damit dieselbe Rangordnung der Nachbarn, was den späteren Vergleich von Repräsentationen erlaubt, die unterschiedliche native Distanzmetriken verwenden.
 %
 \subsection{Speicher- und Rechenkomplexität}
 %
@@ -53,6 +56,16 @@ Im Kontext von Embedding-Vektoren bedeutet Quantisierung, dass jede Dimension ei
 Der resultierende Informationsverlust ist unvermeidlich: Werden $2^{32}$ mögliche Werte auf $2^b$ Stufen mit $b < 32$ abgebildet, gehen Unterscheidungen verloren.
 Die zentrale Frage ist nicht, \emph{ob} Information verloren geht, sondern \emph{welche} Informationsanteile betroffen sind und ob die für eine gegebene Anwendung relevante Struktur des Raums erhalten bleibt.
 %
+\subsection{Quantisierung und Dequantisierung}
+%
+Die in dieser Arbeit betrachtete Multi-Bit-Quantisierung arbeitet pro Dimension mit einer Min-Max-Skalierung.
+Für jede Dimension werden das Minimum und das Maximum über den Datensatz bestimmt und der Wertebereich linear auf $2^b$ gleichmäßig verteilte Stufen abgebildet.
+Um aus einem quantisierten Code wieder einen näherungsweisen Float-Wert zu gewinnen, ist der umgekehrte Schritt nötig, die \emph{Dequantisierung}: Der Code wird mithilfe der gespeicherten Grenzwerte zurück auf den ursprünglichen Wertebereich skaliert.
+\par
+Die Grenzwerte pro Dimension müssen daher zusätzlich zu den eigentlichen Codes gespeichert werden.
+Sie bilden einen festen Metadaten-Aufwand, der unabhängig von der Anzahl der Vektoren ist und den praktischen Speicherbedarf gegenüber der reinen Bitpackung leicht erhöht.
+Distanzberechnungen auf quantisierten Multi-Bit-Vektoren erfolgen in dieser Arbeit auf den dequantisierten, also rekonstruierten Werten; die 1-Bit-Variante benötigt keine solche Rekonstruktion, da hier direkt die Hamming-Distanz auf den Bitcodes verwendet wird.
+%
 \subsection{Qualitätskriterien}
 %
 Zwei komplementäre Eigenschaften bestimmen die Eignung einer Quantisierung für Retrieval-Anwendungen:
@@ -67,6 +80,9 @@ Solange das korrekte Dokument den ersten Rang einnimmt, ist die absolute Distanz
 Diese Unterscheidung ist für die Interpretation der experimentellen Ergebnisse zentral.
 Ein Verfahren kann hohe Distortion aufweisen, aber dennoch für Retrieval geeignet sein, sofern die Rangordnung erhalten bleibt.
 Umgekehrt kann niedrige Distortion mit gestörter Rangordnung einhergehen, wenn systematische Verzerrungen die Reihenfolge naher Punkte invertieren.
+\par
+Da Kompression stets einen Kompromiss zwischen Qualität und Speicherbedarf darstellt, werden die Ergebnisse häufig als Pareto-Front dargestellt.
+Eine Konfiguration liegt auf der Pareto-Front, wenn keine andere Konfiguration bei gleichem oder geringerem Speicherbedarf eine bessere Qualität erreicht; solche Konfigurationen sind nicht dominiert und bilden die jeweils bestmögliche Wahl für ein gegebenes Speicherbudget.
 %
 %
 \section{Binäre Embeddings und Hamming-Distanz}
@@ -88,7 +104,9 @@ Die Ähnlichkeit zweier binärer Vektoren wird über die Hamming-Distanz bestimm
   d_H(\mathbf{a}, \mathbf{b}) = \sum_{i=1}^{d} \mathbf{1}[a_i \neq b_i]
 \end{equation}
 %
-Diese Operation lässt sich auf moderner Hardware durch eine XOR-Verknüpfung mit anschließendem Population-Count in wenigen Taktzyklen berechnen.
+Der Ausdruck $\mathbf{1}[a_i \neq b_i]$ ist die Indikatorfunktion; sie ist~1, wenn sich die beiden Bits an Position~$i$ unterscheiden, und sonst~0.
+Die Hamming-Distanz zählt also schlicht die Anzahl der Positionen, an denen sich zwei Bitvektoren unterscheiden.
+Sie lässt sich auf moderner Hardware sehr effizient berechnen: Ein bitweises Exklusiv-Oder (XOR) markiert die abweichenden Positionen mit einer~1, und ein Population-Count (das Zählen der gesetzten Einsen) liefert das Ergebnis in wenigen Taktzyklen.
 Gegenüber der Float-Cosine-Similarity, die $d$ Multiplikationen und $d-1$ Additionen erfordert, ermöglicht dies Geschwindigkeitsvorteile um Größenordnungen.
 %
 \subsection{Informationsverlust der Binarisierung}
@@ -109,10 +127,11 @@ Ein uniformer Quantisierer, der jede Dimension mit derselben Stufenzahl behandel
 TurboQuant löst dieses Problem in zwei Schritten, die keine Trainingsphase auf den Zieldaten erfordern:
 \begin{enumerate}
   \item \textbf{Orthogonale Rotation.}
-Die Eingabevektoren werden mit einer zufälligen orthogonalen Matrix $\mathbf{R} \in \text{SO}(d)$ multipliziert:
+Die Eingabevektoren werden mit einer zufälligen orthogonalen Matrix $\mathbf{R} \in \text{SO}(d)$ (der speziellen orthogonalen Gruppe, also den Rotationen im $\mathbb{R}^d$) multipliziert:
 $\mathbf{x}' = \mathbf{R}\mathbf{x}$.
 Da orthogonale Transformationen winkel- und abstandserhaltend sind, bleibt die semantische Struktur des Raums exakt erhalten.
 Die Rotation dekorreliert jedoch die Dimensionen und verteilt die Varianz gleichmäßig über alle Achsen.
+Das ist kein Widerspruch: Die Abstände zwischen den Punkten bleiben identisch, nur die Ausrichtung der Achsen relativ zur Punktwolke ändert sich, sodass keine einzelne Achse mehr die Varianz dominiert.
   \item \textbf{Uniforme skalare Quantisierung.}
 Jede Dimension des rotierten Vektors wird unabhängig auf $2^b$ gleichmäßig verteilte Stufen quantisiert, wobei $b$ die gewählte Bittiefe bezeichnet.
 Nach der Rotation ist jede Dimension gleich informationsreich, sodass ein uniformer Quantisierer seine verfügbaren Stufen optimal nutzen kann.
@@ -121,18 +140,19 @@ Nach der Rotation ist jede Dimension gleich informationsreich, sodass ein unifor
 \subsection{Varianzumverteilung als Schlüsselmechanismus}
 %
 Der Beitrag der Rotation liegt formal in der Umverteilung der Varianz.
-Seien $\lambda_1 \geq \lambda_2 \geq \ldots \geq \lambda_d$ die Eigenwerte der Kovarianzmatrix des Embedding-Raums.
+Seien $\lambda_1 \geq \lambda_2 \geq \ldots \geq \lambda_d$ die Eigenwerte der Kovarianzmatrix des Embedding-Raums; jeder Eigenwert $\lambda_i$ gibt die Varianz entlang einer der Hauptrichtungen an.
 Vor der Rotation ist die Varianz asymmetrisch verteilt; einzelne Hauptkomponenten dominieren.
-Nach einer zufälligen Rotation ist die erwartete Varianz pro Dimension $\frac{1}{d}\sum_{i=1}^d \lambda_i$ und damit für alle Dimensionen gleich.
-Ein uniformer Quantisierer mit $2^b$ Stufen verursacht dann auf jeder Dimension denselben Quantisierungsfehler, was die Gesamt-Distortion minimiert.
+Über zufällige Rotationen gemittelt beträgt die erwartete Varianz pro Dimension $\frac{1}{d}\sum_{i=1}^d \lambda_i$ und ist damit für alle Dimensionen gleich.
+Ein uniformer Quantisierer mit $2^b$ Stufen verursacht dann auf jeder Dimension näherungsweise denselben Quantisierungsfehler, was die Gesamt-Distortion minimiert.
 \par
 Die Methode setzt voraus, dass eine gleichmäßige Varianzverteilung die Quantisierung verbessert.
-Diese Annahme ist für typische Embedding-Räume empirisch gerechtfertigt, da diese eine stark asymmetrische Varianzstruktur aufweisen, bei der wenige Dimensionen die Gesamtvarianz dominieren.
+Der relevante Aspekt ist dabei die Verteilung der Varianz über die Achsen (das Eigenwertspektrum), nicht die Form der Randverteilung innerhalb einer einzelnen Dimension.
+TurboQuant ist folglich besonders dann wirksam, wenn die Varianz stark ungleich über die Achsen verteilt ist, wenige Richtungen also den Großteil der Gesamtvarianz tragen.
+Ob dies für einen konkreten Embedding-Raum zutrifft, ist eine empirische Frage; für den in dieser Arbeit untersuchten Raum wird sie in Phase~1 (Abschnitt~\ref{sec:ergebnisse_intdim}) geprüft, mit unmittelbaren Konsequenzen für die zu erwartende Wirksamkeit der Rotation.
 %
 \subsection{Einordnung}
 %
 TurboQuant übertrifft in Nearest-Neighbor-Aufgaben bestehende Product-Quantization-Verfahren \cite{jegou_2011_pq} hinsichtlich des Recall bei gleichzeitig deutlich geringerem Indexierungsaufwand, da weder Codebook-Training noch eine Zuordnung zu Subquantisierern erforderlich ist \cite{zandieh_2025_turboquant}.
-Das Open-Source-Projekt turbovec setzt den Ansatz als Vektorindex mit Python-Anbindung um \cite{turbovec_2024}.
 %
 %
 \section{Dimensionsreduktion durch Hauptkomponentenanalyse}
@@ -141,7 +161,8 @@ Das Open-Source-Projekt turbovec setzt den Ansatz als Vektorindex mit Python-Anb
 Neben der Reduktion der Bittiefe pro Dimension bildet die Reduktion der Anzahl der Dimensionen die zweite Achse der Kompression.
 Die Hauptkomponentenanalyse (PCA) projiziert die Vektoren auf die Richtungen maximaler Varianz im Datenraum.
 \par
-Formal wird die Kovarianzmatrix $\mathbf{C} = \frac{1}{N}\mathbf{X}^\top \mathbf{X}$ des zentrierten Datensatzes $\mathbf{X} \in \mathbb{R}^{N \times d}$ eigenwertdekomponiert.
+Formal wird die Kovarianzmatrix $\mathbf{C} = \frac{1}{N}\mathbf{X}^\top \mathbf{X}$ des zentrierten Datensatzes $\mathbf{X} \in \mathbb{R}^{N \times d}$ (jede Dimension um ihren Mittelwert verschoben) in ihre Eigenwerte und Eigenvektoren zerlegt.
+Die Eigenvektoren geben die Hauptrichtungen der Daten an, die zugehörigen Eigenwerte $\lambda_i$ die Varianz entlang dieser Richtungen.
 Die Projektion auf die $d'$ Eigenvektoren mit den größten Eigenwerten ergibt eine Repräsentation in $\mathbb{R}^{d'}$, die den maximalen Anteil der Gesamtvarianz erhält.
 Die kumulative erklärte Varianz
 \begin{equation}
@@ -197,6 +218,7 @@ Die Grundlage bildet der Discounted Cumulative Gain:
 \end{equation}
 %
 wobei $rel_i$ die Relevanzstufe des Dokuments auf Position $i$ bezeichnet.
+Der Zähler $2^{rel_i} - 1$ gewichtet höhere Relevanzstufen überproportional, sodass hochrelevante Treffer stärker zählen als mehrere gering relevante.
 Der Logarithmus im Nenner bewirkt eine positionsabhängige Diskontierung: Relevante Dokumente auf späteren Positionen tragen weniger zum Gesamtwert bei als solche auf frühen Positionen.
 \par
 Die Normalisierung erfolgt durch Division mit dem idealen DCG (IDCG), der sich ergibt, wenn die Dokumente optimal nach ihrer Relevanz sortiert wären:
@@ -239,26 +261,14 @@ Für die vorliegende Arbeit dient NDCG@10 als primäre Metrik, da sie als Standa
 Recall und MRR ergänzen die Analyse, indem sie spezifische Fehlermodi sichtbar machen: Ein System mit hohem NDCG, aber niedrigem Recall bei kleinem $k$ ist für Endnutzer möglicherweise ungeeignet, obwohl die Gesamtrangliste gut ist.
 %
 %
-\section{Model Context Protocol}
+\section{Anwendungskontext: Agentenbasierte Suche}
 \label{sec:grundlagen_mcp}
 %
-Das Model Context Protocol (MCP) \cite{anthropic_2024_mcp} ist ein offener Standard, der eine einheitliche Schnittstelle zwischen KI-Agenten und externen Werkzeugen definiert.
-Es formalisiert die Kommunikation zwischen einem Host-System (typischerweise ein Large Language Model) und Servern, die spezialisierte Fähigkeiten bereitstellen, etwa Datenzugriff, Berechnungen oder Retrieval-Operationen.
+Der praktische Anwendungskontext dieser Arbeit ist die Nutzung vektorbasierter Suche durch KI-Agenten.
+Standards wie das Model Context Protocol (MCP) \cite{anthropic_2024_mcp} definieren dafür eine einheitliche Schnittstelle, über die ein Sprachmodell zur Laufzeit auf externe Retrieval-Werkzeuge zugreift.
 %
-\subsection{Architektur}
-%
-Die Kommunikation folgt einem Client-Server-Modell.
-Der Host sendet strukturierte Anfragen über einen MCP-Client an einen oder mehrere MCP-Server.
-Jeder Server exponiert eine definierte Menge von Werkzeugen (\emph{Tools}), die der Agent zur Laufzeit aufrufen kann.
-Die Kommunikation erfolgt über JSON-RPC, wodurch Server sprachunabhängig implementierbar sind.
-%
-\subsection{Relevanz für die vorliegende Arbeit}
-%
-Für die vorliegende Arbeit ist MCP in zweierlei Hinsicht relevant.
-Erstens erzwingt die Protokollarchitektur eine saubere Trennung zwischen dem Sprachmodell, das Anfragen formuliert, und dem Retrieval-System, das Ergebnisse liefert.
-Diese Trennung ermöglicht es, verschiedene Retrieval-Backends -- Float, quantisiert, binär -- hinter derselben Schnittstelle auszutauschen, ohne den Agenten zu modifizieren.
-Unterschiede im Agentenverhalten sind damit eindeutig auf das Backend zurückführbar.
-\par
-Zweitens stellt die agentenbasierte Nutzung implizite Latenzanforderungen.
-Ein Agent, der pro Nutzerinteraktion mehrere Werkzeugaufrufe durchführt, reagiert nur dann flüssig, wenn jeder einzelne Aufruf in niedriger Latenz beantwortet wird.
-Komprimierte Repräsentationen, die geringeren Speicherbedarf und potenziell schnellere Distanzberechnungen ermöglichen, haben in diesem Kontext einen unmittelbaren praktischen Vorteil.
+Für die vorliegende Arbeit ist dieser Kontext in zweierlei Hinsicht relevant.
+Erstens erzwingt eine solche Schnittstelle eine saubere Trennung zwischen dem Sprachmodell, das Anfragen formuliert, und dem Retrieval-System, das Ergebnisse liefert.
+Dadurch lassen sich verschiedene Retrieval-Backends, ob Float, quantisiert oder binär, austauschen, ohne den Agenten zu modifizieren, was Qualitätsunterschiede eindeutig auf das Backend zurückführbar macht.
+Zweitens stellt die agentenbasierte Nutzung implizite Latenz- und Speicheranforderungen: Ein Agent, der pro Interaktion mehrere Werkzeugaufrufe durchführt, profitiert unmittelbar von komprimierten Repräsentationen mit geringerem Speicherbedarf.
+Dies motiviert die in dieser Arbeit untersuchte Kompression, auch wenn das Protokoll selbst nicht Gegenstand der Experimente ist.
