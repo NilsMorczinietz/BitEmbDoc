@@ -56,7 +56,7 @@ Konkret werden folgende Teilfragen adressiert:
 %
 \section{Methodischer Ansatz}
 %
-Zur Beantwortung dieser Fragen wird ein kontrolliertes Experiment in sechs aufeinander aufbauenden Phasen durchgeführt (vgl.\ Kapitel~3).
+Zur Beantwortung dieser Fragen wird ein kontrolliertes Experiment in sechs aufeinander aufbauenden Phasen durchgeführt (vgl.\ Kapitel~\ref{chap:methodik}).
 Den Ausgangspunkt bildet ein Float32-Referenzraum, der mit dem Modell \texttt{bge-large-en-v1.5} \cite{xiao_2023_bge} auf drei heterogenen BEIR-Datensätzen \cite{thakur_2021_beir} erzeugt wird.
 Dieser Referenzraum wird nachträglich mit verschiedenen Verfahren komprimiert: naive Binarisierung (1~Bit), rotationsbasierte Quantisierung nach dem TurboQuant-Prinzip (1~Bit bis 8~Bit) sowie PCA-basierte Dimensionsreduktion.
 \par
@@ -66,6 +66,6 @@ Dieser schrittweise Aufbau ist methodisch notwendig, da er es ermöglicht, Quali
 \section{Aufbau der Arbeit}
 %
 Kapitel~\ref{chap:grundlagen} legt die theoretischen Grundlagen zu Embeddings, Quantisierungsverfahren und dem agentenbasierten Anwendungskontext.
-Die Methodik in Kapitel~3 beschreibt den experimentellen Aufbau, die Datensätze und die Evaluationsmetriken.
-Die Ergebnisse werden kapitelweise entlang der sechs Phasen dargestellt und diskutiert.
+Die Methodik in Kapitel~\ref{chap:methodik} beschreibt den experimentellen Aufbau, die Datensätze und die Evaluationsmetriken.
+Die Ergebnisse werden im Ergebniskapitel entlang der sechs Phasen dargestellt und diskutiert.
 Die Arbeit schließt mit einer Zusammenfassung der zentralen Erkenntnisse und einem Ausblick auf weiterführende Fragestellungen.

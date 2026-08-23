@@ -1,4 +1,5 @@
 \chapter{Methodik}
+\label{chap:methodik}
 %
 \section{Experimenteller Rahmen}
 %
@@ -108,6 +109,17 @@ Die TurboQuant-Varianten implementieren das Kernprinzip nach \cite{zandieh_2025_
 Die konkrete Umsetzung verwendet eine zufällige Rotationsmatrix aus SO($d$) anstelle der im Paper beschriebenen Randomized Hadamard Transform und quantisiert anschließend jede Dimension per Min-Max-Normalisierung auf $2^b$ gleichverteilte Stufen.
 Diese vereinfachte Implementierung erhält die konzeptionell entscheidende Eigenschaft -- die Varianzumverteilung durch Rotation vor der uniformen Quantisierung -- verzichtet aber auf die laufzeitoptimierte Hadamard-basierte Rotation und die theoretisch optimierten Quantisierungsgrenzen des vollständigen Verfahrens.
 Für die Forschungsfrage ist diese Vereinfachung unproblematisch, da nicht die Laufzeit der Rotationsphase, sondern die resultierende Retrieval-Qualität der komprimierten Repräsentationen untersucht wird.
+%
+Eine eigene Implementierung wird aus zwei Gründen verwendet.
+Erstens erlaubt sie die volle Kontrolle über die Verarbeitungskette, insbesondere das Zusammenspiel von Rotation, Dimensionsreduktion und einer über alle Repräsentationen einheitlichen Distanzberechnung, was für den fairen Vergleich der Verfahren notwendig ist.
+Zweitens ist die verwendete SO($d$)-Rotation keine Verschlechterung gegenüber dem Paper: Die Randomized Hadamard Transform ist eine schnelle Approximation ($\mathcal{O}(d \log d)$) einer gleichverteilten zufälligen Rotation, während SO($d$) genau diese Rotation exakt realisiert, allerdings zum Preis einer höheren Rechenzeit, die hier nicht relevant ist.
+%
+Die funktionale Gleichwertigkeit der beiden Rotationen wurde in einem separaten Verifikationsexperiment bestätigt.
+Da beide Rotationen zufällige orthogonale Transformationen derselben (Haar-)Verteilung sind, folgt ihre Gleichwertigkeit bereits theoretisch und damit datenunabhängig; das Experiment dient der empirischen Bestätigung.
+Es verwendet synthetische Embeddings mit ungleich über die Achsen verteilter Varianz, da nur in diesem Regime die Rotation überhaupt wirkt und ein aussagekräftiger Vergleich möglich ist.
+Dort erhält die SO($d$)-Rotation Normen und paarweise Distanzen exakt (Fehler in der Größenordnung der Maschinengenauigkeit), gleicht die Varianz über die Dimensionen ebenso aus wie die Hadamard-Variante und erreicht nach uniformer Quantisierung dieselbe Distanzverzerrung und dieselbe Nachbarschaftserhaltung; beide rotierten Verfahren übertreffen die unrotierte naive Quantisierung deutlich.
+Die Gleichwertigkeit betrifft damit die Rotationskomponente bei sonst identischer uniformer Quantisierung; auf die im Paper zusätzlich optimierten Quantisierungsgrenzen wird bewusst verzichtet.
+Für die untersuchte Fragestellung ist die eigene Implementierung damit als hinreichend gleichwertig anzusehen.
 Das Verfahren wird in mehreren Bitstiefen evaluiert:
 \begin{itemize}
   \item \textbf{TurboQuant 8-Bit} (256 Quantisierungsstufen pro Dimension, Kompressionsfaktor 4 gegenüber Float32).
@@ -124,7 +136,7 @@ Der Vergleich zwischen naiven und rotierten Varianten gleicher Bitstiefe isolier
 TurboQuant ist aus mehreren Gründen als Vergleichsmethode geeignet:
 \begin{itemize}
   \item Es repräsentiert den aktuellen Stand der Forschung für datenunabhängige Vektorquantisierung.
-  \item Im Gegensatz zur naiven Binarisierung nutzt es eine vorgeschaltete Rotation, die stark asymmetrische Dimensionen ausgleicht (vgl.
+  \item Im Gegensatz zur naiven Binarisierung nutzt es eine vorgeschaltete Rotation, die eine ungleiche Varianzverteilung über die Achsen ausgleicht (vgl.
 Kapitel~\ref{chap:grundlagen}).
   \item Der Kompressionsfaktor liegt zwischen Float und Binär, was eine Einordnung entlang des Kompression-Qualität-Spektrums ermöglicht.
 \end{itemize}

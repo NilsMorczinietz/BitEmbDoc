@@ -146,7 +146,9 @@ Vor der Rotation ist die Varianz asymmetrisch verteilt; einzelne Hauptkomponente
 Ein uniformer Quantisierer mit $2^b$ Stufen verursacht dann auf jeder Dimension näherungsweise denselben Quantisierungsfehler, was die Gesamt-Distortion minimiert.
 \par
 Die Methode setzt voraus, dass eine gleichmäßige Varianzverteilung die Quantisierung verbessert.
-Diese Annahme ist für typische Embedding-Räume empirisch gerechtfertigt, da diese eine stark asymmetrische Varianzstruktur aufweisen, bei der wenige Dimensionen die Gesamtvarianz dominieren.
+Der relevante Aspekt ist dabei die Verteilung der Varianz über die Achsen (das Eigenwertspektrum), nicht die Form der Randverteilung innerhalb einer einzelnen Dimension.
+TurboQuant ist folglich besonders dann wirksam, wenn die Varianz stark ungleich über die Achsen verteilt ist, wenige Richtungen also den Großteil der Gesamtvarianz tragen.
+Ob dies für einen konkreten Embedding-Raum zutrifft, ist eine empirische Frage; für den in dieser Arbeit untersuchten Raum wird sie in Phase~1 (Abschnitt~\ref{sec:ergebnisse_intdim}) geprüft, mit unmittelbaren Konsequenzen für die zu erwartende Wirksamkeit der Rotation.
 %
 \subsection{Einordnung}
 %
