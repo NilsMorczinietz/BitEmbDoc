@@ -542,6 +542,9 @@ Für Cloud-Szenarien wird der Speicherbedarf auf grobe AWS-EC2-Instanzklassen ab
 Die Kostenrechnung ist als betriebswirtschaftliche Größenordnung zu verstehen, nicht als exakter Beschaffungsplan.
 Sie verwendet On-Demand-Preise für typische Instanzen mit ausreichendem Arbeitsspeicher.
 Die Zuordnung lautet: Float32 bei 10~Millionen Vektoren benötigt eine speicherstärkere Instanzklasse mit 64~GiB RAM, \texttt{tq\_4bit} passt in eine 8-GiB-Instanz, und \texttt{tq\_2bit} passt in eine 4-GiB-Instanz.
+Konkret wird die Float32-Referenz einer speicheroptimierten \texttt{r6i}-Instanz zugeordnet, während die komprimierten Arbeitspunkte in günstigere Allzweck- beziehungsweise Graviton-Instanzen (\texttt{t4g}, \texttt{m6g}) fallen.
+Die Ersparnis speist sich damit aus zwei Quellen: dem geringeren Speicherbedarf und dem dadurch möglichen Wechsel der Instanzfamilie.
+Die Zuordnung der Float32-Referenz zur speicherstarken \texttt{r6i}-Instanz ist eine bewusst konservative Annahme und markiert das obere Ende der darstellbaren Ersparnis; die berichteten Prozentwerte sind entsprechend als Best-Case-Größenordnung und nicht als garantierter Mindestwert zu verstehen.
 Das Edge/Mobile-Szenario wird nicht als Cloud-Kostenfall modelliert, weil der Index lokal betrieben wird.
 %
 \section{Synthese und Interpretation}
