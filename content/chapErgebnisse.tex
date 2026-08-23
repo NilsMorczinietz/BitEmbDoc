@@ -653,8 +653,8 @@ Tabelle~\ref{tab:phase5_memory} stellt den theoretischen Speicherbedarf bei voll
 %
 \begin{figure}[htbp]
   \centering
-  \includegraphics[height=0.55\textheight,keepaspectratio]{memory_theoretical_vs_numpy.pdf}
-  \caption{Theoretischer gegenüber praktisch gemessenem Speicherbedarf pro Repräsentation. Das NumPy-Layout liegt für alle Verfahren nahe an der idealen Bitpackung; die kleine Abweichung bei 2-Bit bis 8-Bit entsteht durch die Dequantisierungsmetadaten.}
+  \includegraphics[width=\textwidth,trim={0 2100pt 0 800pt},clip]{memory_theoretical_vs_numpy.pdf}
+  \caption{Theoretischer gegenüber praktisch gemessenem Speicherbedarf pro Repräsentation (exemplarisch für $d = 1024$; die Werte sind über alle Datensätze identisch). Das NumPy-Layout liegt für alle Verfahren nahe an der idealen Bitpackung; die kleine Abweichung bei 2-Bit bis 8-Bit entsteht durch die Dequantisierungsmetadaten.}
   \label{fig:phase5_memory_theo_vs_numpy}
 \end{figure}
 %
