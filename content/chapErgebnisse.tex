@@ -891,7 +891,7 @@ Tabelle~\ref{tab:phase6_aws} zeigt die modellierte Kostenwirkung für einen 10-M
 %
 \begin{table}[htbp]
   \centering
-  \caption{Grobe AWS-Kostenrechnung für einen 10-Millionen-Vektorindex. Die Werte sind als On-Demand-Größenordnung zu interpretieren.}
+  \caption{Grobe AWS-Kostenrechnung für einen 10-Millionen-Vektorindex. Grundlage sind EC2-On-Demand-Listenpreise (Linux) in der Region eu-central-1, abgerufen am 23.08.2026, umgerechnet mit 730~Stunden pro Monat. Die Werte sind als On-Demand-Größenordnung zu interpretieren.}
   \label{tab:phase6_aws}
   \begin{tabular}{lcccc}
     \toprule
@@ -907,7 +907,7 @@ Tabelle~\ref{tab:phase6_aws} zeigt die modellierte Kostenwirkung für einen 10-M
 \begin{figure}[htbp]
   \centering
   \includegraphics[width=0.9\textwidth]{phase6_aws_cost_savings.pdf}
-  \caption{Geschätzte monatliche AWS-Kosten für einen 10-Millionen-Vektorindex. Die Kostenreduktion entsteht nicht durch schnellere Berechnung, sondern durch die Möglichkeit, kleinere speicherärmere Instanzen zu verwenden.}
+  \caption{Geschätzte monatliche AWS-Kosten für einen 10-Millionen-Vektorindex. Die Kostenreduktion entsteht nicht durch schnellere Berechnung, sondern dadurch, dass der geringere Speicherbedarf sowohl eine kleinere Instanz als auch einen Wechsel von einer speicheroptimierten zu einer günstigeren Allzweck- beziehungsweise Graviton-Instanz erlaubt.}
   \label{fig:phase6_aws_costs}
 \end{figure}
 %
@@ -915,6 +915,15 @@ Die Kostenrechnung ist nicht als universelle Preisprognose zu verstehen, sondern
 Sie zeigt dennoch eine klare betriebliche Konsequenz: \texttt{tq\_2bit 1024d} reduziert den modellierten Monatsbetrag von 368~USD auf 24{,}50~USD.
 Das entspricht einer Ersparnis von 343{,}50~USD pro Monat beziehungsweise 4\,122~USD pro Jahr für einen einzelnen 10-Millionen-Vektorindex.
 Bei mehreren Indizes oder mandantengetrennten Deployments skaliert dieser Effekt entsprechend.
+%
+Zwei Einschränkungen sind bei der Interpretation dieser Zahlen zu beachten.
+Erstens entsteht die Ersparnis nicht allein durch den geringeren Speicherbedarf, sondern zusätzlich durch einen Wechsel der Instanzfamilie: Die Float32-Referenz wird einer speicheroptimierten \texttt{r6i}-Instanz zugeordnet, während die komprimierten Arbeitspunkte in günstigere Allzweck- beziehungsweise Graviton-Instanzen (\texttt{t4g}, \texttt{m6g}) passen.
+Ein Teil der prozentualen Ersparnis geht damit auf die andere Preisstruktur der Instanzfamilie zurück und nicht ausschließlich auf die reine Speicherreduktion.
+Zweitens ist die Zuordnung der Float32-Referenz zur speicherstarken \texttt{r6i.2xlarge} eine bewusst konservative Annahme, die das obere Ende der darstellbaren Ersparnis markiert; eine andere Baseline-Wahl würde die prozentuale Differenz verringern.
+Die berichteten Prozentwerte sind daher als plausibles Best-Case-Szenario der Betriebskostenreduktion zu lesen, nicht als garantierter Mindestwert.
+%
+Auf eine Laufzeit- oder Latenzbetrachtung verzichtet Phase~6 bewusst.
+Phase~5 hat gezeigt, dass die Kompression im gemessenen NumPy-Pfad primär einen Speicher- und keinen Geschwindigkeitsvorteil bietet; die betriebliche Relevanz von Phase~6 liegt daher konsequent auf der Speicher- und der daraus abgeleiteten Kostenseite.
 %
 \subsection{Einordnung}
 %
@@ -931,7 +940,8 @@ Für die praktische Empfehlung ist TurboQuant deshalb der relevantere Kandidat: 
 \label{sec:ergebnisse_synthese}
 %
 Die sechs Phasen ergeben zusammen ein kohärentes Bild.
-Dieser Abschnitt bündelt die verteilten Befunde entlang der vier in der Methodik formulierten Leitfragen und schließt damit die Argumentationskette von der Raumgeometrie bis zur praktischen Empfehlung.
+Dieser Abschnitt bündelt die verteilten Befunde zunächst entlang der vier in der Methodik formulierten Leitfragen (Was bleibt erhalten? Was geht verloren? Was bedeutet das für die Praxis? Welche Konfiguration ist sinnvoll?) und bindet sie anschließend explizit an die vier in Abschnitt~\ref{sec:forschungsfrage} gestellten Teilfragen der Forschungsfrage zurück.
+Die Leitfragen dienen dabei als interpretatives Raster, die Teilfragen als der operative Nachweis, dass die eingangs gestellte Forschungsfrage vollständig beantwortet ist; damit schließt sich die Argumentationskette von der Raumgeometrie bis zur praktischen Empfehlung.
 %
 \paragraph{Was bleibt erhalten?}
 Bis zu einer Bittiefe von 4-Bit bleibt die semantische Struktur nahezu vollständig erhalten: Distanzkorrelation ($r > 0{,}99$), Nachbarschaftserhaltung (Overlap $> 0{,}93$) und Retrieval-Qualität (mindestens 99{,}9\,\% der Float32-NDCG) sind praktisch ununterscheidbar von der Referenz.
@@ -955,3 +965,10 @@ Es gibt keine universell optimale Konfiguration, sondern budgetabhängige Arbeit
 \paragraph{Fazit.}
 Die Quantisierung von \texttt{bge-large-en-v1.5}-Embeddings erhält die für Retrieval entscheidende Struktur bis 4-Bit nahezu vollständig und bleibt selbst bei 1-Bit brauchbar.
 Der beobachtete Trade-off zwischen Kompressionsgrad und Suchqualität ist damit für das untersuchte Modell und die exakte Suche klar quantifiziert und auf die geometrischen Eigenschaften des Ausgangsraums zurückführbar.
+%
+\paragraph{Rückbindung an die Teilfragen der Forschungsfrage.}
+Die vier eingangs gestellten Teilfragen sind damit vollständig beantwortet.
+\emph{Teilfrage~1} (quantisierbarkeitsbestimmende Eigenschaften) beantwortet Phase~1: Perfekte L2-Normierung, symmetrische und ausreißerarme Dimensionen sowie hohe Redundanz bestimmen die gute Quantisierbarkeit und erklären die späteren Verlustmuster kausal.
+\emph{Teilfrage~2} (Erhaltung von Distanzen und Nachbarschaften) beantworten die Phasen~2 und~3: Die paarweise Distanzstruktur bleibt bis 4-Bit mit $r > 0{,}99$ erhalten, und die lokale Nachbarschaft bleibt in der Precision-Perspektive (Trustworthiness) selbst bei 1-Bit stabil, während die Recall-Perspektive (Overlap) bei niedrigen Bittiefen erwartungsgemäß nachgibt.
+\emph{Teilfrage~3} (Schwelle signifikanter Retrieval-Verluste) beantwortet Phase~4: Bis 4-Bit ist der Qualitätsverlust vernachlässigbar; ein signifikanter, aber nicht katastrophaler Einbruch auf rund 88\,\% der Float32-Qualität tritt erst bei 1-Bit auf.
+\emph{Teilfrage~4} (Verhältnis von Speicherersparnis zu Qualitätsverlust) beantworten die Phasen~5 und~6: Bis 4-Bit ist die Speicherersparnis quasi kostenlos, und die budgetabhängigen Arbeitspunkte übersetzen dieses Verhältnis in konkrete Einsatzszenarien.
