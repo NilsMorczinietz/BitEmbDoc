@@ -3,18 +3,112 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %=== Glossar ==================================================================
-\newglossaryentry{dog}{
-	name={Hund},
-	description={Behaartes, vierbeiniges Säugetier. Bester Freund des
-	Menschen}
+\newglossaryentry{gls:embedding}{
+	name={Embedding},
+	description={Abbildung eines Datenobjekts wie Text oder Bild auf einen
+	hochdimensionalen Vektor, dessen geometrische Nähe semantische Ähnlichkeit
+	widerspiegelt}
+}
+
+\newglossaryentry{gls:quantisierung}{
+	name={Quantisierung},
+	description={Reduktion der Darstellungsgenauigkeit eines Vektors, indem
+	kontinuierliche Werte auf eine endliche Anzahl diskreter Stufen mit weniger
+	Bits pro Dimension abgebildet werden}
+}
+
+\newglossaryentry{gls:binarisierung}{
+	name={Binarisierung},
+	description={Extremfall der Quantisierung, bei dem jede Dimension anhand
+	ihres Vorzeichens auf ein einzelnes Bit reduziert wird}
+}
+
+\newglossaryentry{gls:distortion}{
+	name={Distortion},
+	description={Maß für die Verzerrung, die durch die Kompression zwischen
+	dem Originalraum und dem rekonstruierten Raum entsteht}
+}
+
+\newglossaryentry{gls:paretofront}{
+	name={Pareto-Front},
+	description={Menge der nicht dominierten Konfigurationen, für die keine
+	andere Konfiguration zugleich einen geringeren Speicherbedarf und eine
+	höhere Qualität erreicht}
 }
 
 %=== Abkürzungen ==============================================================
-\newacronym{svm}{SVM}{support vector machine}
+\newacronym{ndcg}{NDCG}{Normalized Discounted Cumulative Gain}
+\newacronym{dcg}{DCG}{Discounted Cumulative Gain}
+\newacronym{mrr}{MRR}{Mean Reciprocal Rank}
+\newacronym{beir}{BEIR}{Benchmarking Information Retrieval}
+\newacronym{mteb}{MTEB}{Massive Text Embedding Benchmark}
+\newacronym{pca}{PCA}{Principal Component Analysis (Hauptkomponentenanalyse)}
+\newacronym{mrl}{MRL}{Matryoshka Representation Learning}
+\newacronym{pq}{PQ}{Product Quantization}
+\newacronym{ann}{ANN}{Approximate Nearest Neighbor}
+\newacronym{blas}{BLAS}{Basic Linear Algebra Subprograms}
+\newacronym{rag}{RAG}{Retrieval-Augmented Generation}
+\newacronym{twonn}{TwoNN}{Two Nearest Neighbors}
+\newacronym{aws}{AWS}{Amazon Web Services}
+\newacronym{ec2}{EC2}{Elastic Compute Cloud}
 
 %=== Symbole ==================================================================
-\newglossaryentry{sym:force}{
-	name=\ensuremath{\vec{F}},
-	description={Kraft, vektorielle Größe},
+\newglossaryentry{sym:dim}{
+	name={\ensuremath{d}},
+	description={Dimensionszahl der Vektorrepräsentation},
+	type=symbols,
+}
+
+\newglossaryentry{sym:dimint}{
+	name={\ensuremath{d_\text{int}}},
+	description={Intrinsische Dimensionalität, effektive Anzahl unabhängiger
+	Freiheitsgrade des Datenraums},
+	type=symbols,
+}
+
+\newglossaryentry{sym:N}{
+	name={\ensuremath{N}},
+	description={Anzahl der Vektoren im Index beziehungsweise Korpus},
+	type=symbols,
+}
+
+\newglossaryentry{sym:k}{
+	name={\ensuremath{k}},
+	description={Größe der betrachteten Nachbarschaft oder Position des
+	Rang-Cutoffs bei Retrieval-Metriken},
+	type=symbols,
+}
+
+\newglossaryentry{sym:pearson}{
+	name={\ensuremath{r}},
+	description={Pearson-Korrelationskoeffizient, misst den linearen
+	Zusammenhang zwischen Distanzen},
+	type=symbols,
+}
+
+\newglossaryentry{sym:spearman}{
+	name={\ensuremath{\rho}},
+	description={Spearman-Rangkorrelationskoeffizient, misst die
+	Rangerhaltung von Distanzen},
+	type=symbols,
+}
+
+\newglossaryentry{sym:cq}{
+	name={\ensuremath{CQ_1}},
+	description={Compression-Quality-Score, kombiniert Qualitätserhaltung und
+	Speicherersparnis zu einer skalaren Trade-off-Kennzahl},
+	type=symbols,
+}
+
+\newglossaryentry{sym:bitvektor}{
+	name={\ensuremath{\mathbf{b}}},
+	description={Binärer Vektor aus \ensuremath{\{0,1\}^d}, Ergebnis der
+	Binarisierung},
+	type=symbols,
+}
+
+\newglossaryentry{sym:memory}{
+	name={\ensuremath{M(N)}},
+	description={Speicherbedarf eines Index mit \ensuremath{N} Vektoren},
 	type=symbols,
 }
