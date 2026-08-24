@@ -23,3 +23,6 @@ build/
 *.acr
 *.alg
 *.slo
+*.slg
+*.sls
+*-SAVE-ERROR
