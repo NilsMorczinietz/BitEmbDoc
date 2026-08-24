@@ -8,7 +8,7 @@ Die Darstellung folgt der Phasenstruktur des Experiments: Für jede Phase werden
 \label{sec:ergebnisse_phase1}
 %
 Phase~1 analysiert den unkomprimierten Float-Raum, um Erwartungen an das Quantisierungsverhalten zu formulieren.
-Die Ergebnisse zeigen, dass der von \texttt{bge-large-en-v1.5} erzeugte Embedding-Raum Eigenschaften besitzt, die eine gute Quantisierbarkeit erwarten lassen.
+Die Ergebnisse zeigen, dass der von \texttt{bge"=large"=en"=v1.5} erzeugte Embedding-Raum Eigenschaften besitzt, die eine gute Quantisierbarkeit erwarten lassen.
 %
 \subsection{Normverteilung}
 %
@@ -156,7 +156,7 @@ Diese Hypothese wird in Phase~3 empirisch geprüft.
 \subsection{Zusammenfassung und Vorhersagen}
 \label{sec:ergebnisse_phase1_vorhersagen}
 %
-Die Charakterisierung ergibt ein konsistentes Bild: Der Embedding-Raum von \texttt{bge-large-en-v1.5} besitzt drei Eigenschaften, die aus theoretischer Sicht eine gute Quantisierbarkeit erwarten lassen:
+Die Charakterisierung ergibt ein konsistentes Bild: Der Embedding-Raum von \texttt{bge"=large"=en"=v1.5} besitzt drei Eigenschaften, die aus theoretischer Sicht eine gute Quantisierbarkeit erwarten lassen:
 \begin{enumerate}
   \item \textbf{Perfekte Normierung:} Die Binarisierung verliert keine Norminformation.
   \item \textbf{Symmetrische, nahezu normalverteilte Dimensionen ohne schwere Ränder:} Der Vorzeichenschwellwert liegt optimal, und uniforme Quantisierung verursacht keine Ausreißer-Fehler.
@@ -316,7 +316,7 @@ Aus der Pareto-Front lassen sich drei Regime ableiten:
 \begin{itemize}
   \item \textbf{Hohe Qualität ($\rho > 0{,}99$):} Naive oder TQ 4-Bit ab $d = 256$ (1024~Bit/Vektor) liefern nahezu perfekte Rangerhaltung.
   Der Sprung von 4-Bit auf 8-Bit bringt nur noch marginalen Zugewinn bei doppeltem Speicher.
-  \item \textbf{Mittlere Qualität ($\rho \approx 0{,}88$--$0{,}93$):} TQ~1-Bit bei $d = 512$--$768$ (512--768~Bit/Vektor) erreicht gute Rangerhaltung bei extremer Kompression.
+  \item \textbf{Mittlere Qualität ($\rho \approx 0{,}88$ bis $0{,}93$):} TQ~1-Bit bei $d = 512$ bis $768$ (512 bis 768~Bit/Vektor) erreicht gute Rangerhaltung bei extremer Kompression.
   Naive~1-Bit ist in diesem Bereich nicht wettbewerbsfähig.
   \item \textbf{Minimaler Speicher ($< 256$~Bit/Vektor):} TQ~1-Bit bei $d = 64$--$128$ liefert noch $\rho \approx 0{,}77$--$0{,}80$, was für Vorfilterung in zweistufigen Retrieval-Systemen ausreichend sein kann.
 \end{itemize}
@@ -635,6 +635,7 @@ Tabelle~\ref{tab:phase5_memory} stellt den theoretischen Speicherbedarf bei voll
 %
 \begin{table}[htbp]
   \centering
+  \small
   \caption{Speicherbedarf pro Vektor bei $d = 1024$ und $N = 1\,000$ Vektoren. Der theoretische Wert beschreibt die ideale Bitpackung, das NumPy-Layout den tatsächlich gemessenen Verbrauch inklusive Dequantisierungsmetadaten. Der Kompressionsfaktor (CR) bezieht sich auf Float32 bei $d = 1024$. Die Werte sind über alle drei Datensätze identisch.}
   \label{tab:phase5_memory}
   \begin{tabular}{lcccc}
@@ -798,6 +799,7 @@ Anders als die über drei Datensätze gemittelten Werte der Phase~4 (Float32-NDC
 %
 \begin{table}[htbp]
   \centering
+  \small
   \caption{Praktische TurboQuant-Szenarien in Phase~6. Die Speicherwerte beschreiben den reinen Vektorspeicher ohne Metadaten, Textchunks oder ANN-Zusatzstrukturen.}
   \label{tab:phase6_scenarios}
   \begin{tabular}{llccccc}
@@ -874,7 +876,7 @@ Die Balkenhöhen wachsen linear mit der Vektoranzahl und mit der Dimension; die 
 %
 \begin{figure}[htbp]
   \centering
-  \includegraphics[width=\textwidth]{phase6_mobile_sub10m_scaling.pdf}
+  \includegraphics[width=\textwidth,height=0.68\textheight,keepaspectratio]{phase6_mobile_sub10m_scaling.pdf}
   \caption{Mobile Speicherskalierung für TurboQuant unterhalb von 10~Millionen Vektoren. Jede Teilgrafik entspricht einer Bittiefe; innerhalb einer Vektoranzahl stehen die Balken für die evaluierten Dimensionszahlen.}
   \label{fig:phase6_mobile_tq_scaling}
 \end{figure}
