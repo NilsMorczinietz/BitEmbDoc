@@ -8,7 +8,7 @@ Die Darstellung folgt der Phasenstruktur des Experiments: Für jede Phase werden
 \label{sec:ergebnisse_phase1}
 %
 Phase~1 analysiert den unkomprimierten Float-Raum, um Erwartungen an das Quantisierungsverhalten zu formulieren.
-Die Ergebnisse zeigen, dass der von \texttt{bge"=large"=en"=v1.5} erzeugte Embedding-Raum Eigenschaften besitzt, die eine gute Quantisierbarkeit erwarten lassen.
+Die Ergebnisse zeigen, dass der von \texttt{bge-\allowbreak large-\allowbreak en-\allowbreak v1.5} erzeugte Embedding-Raum Eigenschaften besitzt, die eine gute Quantisierbarkeit erwarten lassen.
 %
 \subsection{Normverteilung}
 %
@@ -156,7 +156,7 @@ Diese Hypothese wird in Phase~3 empirisch geprüft.
 \subsection{Zusammenfassung und Vorhersagen}
 \label{sec:ergebnisse_phase1_vorhersagen}
 %
-Die Charakterisierung ergibt ein konsistentes Bild: Der Embedding-Raum von \texttt{bge"=large"=en"=v1.5} besitzt drei Eigenschaften, die aus theoretischer Sicht eine gute Quantisierbarkeit erwarten lassen:
+Die Charakterisierung ergibt ein konsistentes Bild: Der Embedding-Raum von \texttt{bge-\allowbreak large-\allowbreak en-\allowbreak v1.5} besitzt drei Eigenschaften, die aus theoretischer Sicht eine gute Quantisierbarkeit erwarten lassen:
 \begin{enumerate}
   \item \textbf{Perfekte Normierung:} Die Binarisierung verliert keine Norminformation.
   \item \textbf{Symmetrische, nahezu normalverteilte Dimensionen ohne schwere Ränder:} Der Vorzeichenschwellwert liegt optimal, und uniforme Quantisierung verursacht keine Ausreißer-Fehler.
@@ -610,7 +610,7 @@ Die durchgehende Übereinstimmung von Vorhersage und Messung über alle Phasen s
 Bis 4-Bit ist Quantisierung praktisch verlustfrei, ohne statistisch nachweisbaren Unterschied zu Float32, bei einem Kompressionsfaktor von~8.
 2-Bit verursacht einen kleinen, meist nicht signifikanten Verlust bei Kompressionsfaktor~16.
 Erst 1-Bit erzeugt einen signifikanten, aber mit rund 88\,\% relativer Qualität keineswegs katastrophalen Abfall bei Kompressionsfaktor~32.
-Diese Werte gelten für das untersuchte Modell \texttt{bge-large-en-v1.5} und die exakte Brute-Force-Suche; unter anderen Modellen oder approximativer Indexierung können sie abweichen.
+Diese Werte gelten für das untersuchte Modell \texttt{bge-\allowbreak large-\allowbreak en-\allowbreak v1.5} und die exakte Brute-Force-Suche; unter anderen Modellen oder approximativer Indexierung können sie abweichen.
 Diese Qualitätsstufen erhalten ihren Preis jedoch erst durch den zugehörigen Ressourcenbedarf, den Phase~5 misst, bevor Phase~6 beide Seiten zu konkreten Einsatzkontexten verbindet.
 %
 \paragraph{Zusammenfassung.}
@@ -965,7 +965,7 @@ Es gibt keine universell optimale Konfiguration, sondern budgetabhängige Arbeit
 Über alle Betriebspunkte hinweg ist TurboQuant der naiven Quantisierung vorzuziehen, da es bei identischem Speicherbedarf die Instabilitäten unter Dimensionsreduktion vermeidet.
 %
 \paragraph{Fazit.}
-Die Quantisierung von \texttt{bge-large-en-v1.5}-Embeddings erhält die für Retrieval entscheidende Struktur bis 4-Bit nahezu vollständig und bleibt selbst bei 1-Bit brauchbar.
+Die Quantisierung von \texttt{bge-\allowbreak large-\allowbreak en-\allowbreak v1.5}-Embeddings erhält die für Retrieval entscheidende Struktur bis 4-Bit nahezu vollständig und bleibt selbst bei 1-Bit brauchbar.
 Der beobachtete Trade-off zwischen Kompressionsgrad und Suchqualität ist damit für das untersuchte Modell und die exakte Suche klar quantifiziert und auf die geometrischen Eigenschaften des Ausgangsraums zurückführbar.
 %
 \paragraph{Rückbindung an die Teilfragen der Forschungsfrage.}
