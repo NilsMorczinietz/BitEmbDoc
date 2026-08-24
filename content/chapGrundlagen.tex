@@ -261,14 +261,16 @@ Für die vorliegende Arbeit dient NDCG@10 als primäre Metrik, da sie als Standa
 Recall und MRR ergänzen die Analyse, indem sie spezifische Fehlermodi sichtbar machen: Ein System mit hohem NDCG, aber niedrigem Recall bei kleinem $k$ ist für Endnutzer möglicherweise ungeeignet, obwohl die Gesamtrangliste gut ist.
 %
 %
-\section{Anwendungskontext: Agentenbasierte Suche}
-\label{sec:grundlagen_mcp}
+\section{Anwendungskontext: Praktischer Einsatz vektorbasierter Suche}
+\label{sec:grundlagen_anwendungskontext}
 %
-Der praktische Anwendungskontext dieser Arbeit ist die Nutzung vektorbasierter Suche durch KI"=Agenten.
-Standards wie das Model Context Protocol (MCP)~\cite{anthropic_2024_mcp} definieren dafür eine einheitliche Schnittstelle, über die ein Sprachmodell zur Laufzeit auf externe Retrieval-Werkzeuge zugreift.
+Der praktische Anwendungskontext dieser Arbeit ist der produktive Einsatz vektorbasierter Suche unter realen Speicher-, Qualitäts- und Kostenrestriktionen.
+Ein typisches Beispiel sind KI"=Agenten, die zur Laufzeit über eine einheitliche Schnittstelle auf externe Retrieval-Werkzeuge zugreifen; ebenso relevant sind lokale Suche auf Endgeräten und kostenoptimierte Retrieval-Dienste in der Cloud.
 %
 Für die vorliegende Arbeit ist dieser Kontext in zweierlei Hinsicht relevant.
-Erstens erzwingt eine solche Schnittstelle eine saubere Trennung zwischen dem Sprachmodell, das Anfragen formuliert, und dem Retrieval-System, das Ergebnisse liefert.
-Dadurch lassen sich verschiedene Retrieval-Backends, ob Float, quantisiert oder binär, austauschen, ohne den Agenten zu modifizieren, was Qualitätsunterschiede eindeutig auf das Backend zurückführbar macht.
-Zweitens stellt die agentenbasierte Nutzung implizite Latenz- und Speicheranforderungen: Ein Agent, der pro Interaktion mehrere Werkzeugaufrufe durchführt, profitiert unmittelbar von komprimierten Repräsentationen mit geringerem Speicherbedarf.
-Dies motiviert die in dieser Arbeit untersuchte Kompression, auch wenn das Protokoll selbst nicht Gegenstand der Experimente ist.
+Erstens beruht die produktive Nutzung auf einer sauberen Trennung zwischen der anfragenden Komponente und dem Retrieval-System, das Ergebnisse liefert.
+Dadurch lassen sich verschiedene Retrieval-Backends, ob Float, quantisiert oder binär, austauschen, ohne die aufrufende Anwendung zu modifizieren, was Qualitätsunterschiede eindeutig auf das Backend zurückführbar macht.
+Genau diese Entkopplung bildet das methodische Fundament der Arbeit, da sie den Vergleich der Kompressionsverfahren bei sonst identischen Bedingungen erlaubt.
+Zweitens stellt der reale Einsatz konkrete Speicher- und Kostenanforderungen, die sich je nach Umgebung stark unterscheiden: von lokalen Beständen auf Endgeräten mit engem Speicherbudget über kostenempfindliche Cloud-Dienste bis hin zu hochpräzisen Enterprise-Systemen.
+Diese Bandbreite motiviert die untersuchte Kompression unmittelbar und wird in Phase~6 (Abschnitt~\ref{sec:methodik_phase6}) zu drei konkreten Einsatzszenarien verdichtet.
+Die konkrete Einbettung in eine Agenten- oder Anwendungsschnittstelle ist dabei selbst nicht Gegenstand der Experimente.
