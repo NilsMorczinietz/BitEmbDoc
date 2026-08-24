@@ -42,11 +42,11 @@ Würde nur ein einzelnes Subset verwendet, wäre unklar, ob die Ergebnisse an de
 %
 \section{Embedding-Modell}
 %
-Für die Erzeugung aller Vektorrepräsentationen wird ausschließlich das Modell \texttt{bge"=large"=en"=v1.5}~\cite{xiao_2023_bge} verwendet.
+Für die Erzeugung aller Vektorrepräsentationen wird ausschließlich das Modell \texttt{bge-\allowbreak large-\allowbreak en-\allowbreak v1.5}~\cite{xiao_2023_bge} verwendet.
 Die Beschränkung auf ein einziges Modell ist methodisch notwendig, um Konfundierung zu vermeiden.
 Unterschiedliche Modelle erzeugen Vektorräume mit unterschiedlicher Geometrie, sodass ein Vergleich der Quantisierungsergebnisse nicht mehr eindeutig auf die Kompressionsverfahren zurückführbar wäre.
 %
-Die Wahl fällt auf \texttt{bge"=large"=en"=v1.5} aus folgenden Gründen:
+Die Wahl fällt auf \texttt{bge-\allowbreak large-\allowbreak en-\allowbreak v1.5} aus folgenden Gründen:
 \begin{itemize}
   \item Das Modell erreicht zum Zeitpunkt der Modellauswahl konsistent hohe Werte auf dem MTEB-Leaderboard~\cite{muennighoff_2022_mteb} und gilt als etablierter Referenzpunkt in der Embedding-Literatur.
   \item Es erzeugt Vektoren mit 1024 Dimensionen.
@@ -54,7 +54,7 @@ Damit ist der Ausgangsraum hochdimensional genug für eine aussagekräftige Quan
   \item Als Open-Source-Modell ermöglicht es vollständige Reproduzierbarkeit.
 \end{itemize}
 %
-Eine naheliegende Alternative wäre \texttt{nomic"=embed"=text"=v1.5}~\cite{nussbaum_2024_nomic}, das durch Matryoshka-Training bereits auf variable Dimensionsgrößen und binäre Ausgabe optimiert ist.
+Eine naheliegende Alternative wäre \texttt{nomic-\allowbreak embed-\allowbreak text-\allowbreak v1.5}~\cite{nussbaum_2024_nomic}, das durch Matryoshka"=Training bereits auf variable Dimensionsgrößen und binäre Ausgabe optimiert ist.
 Genau diese Optimierung macht es für die vorliegende Untersuchung jedoch weniger geeignet.
 Da das Ziel ist, den Informationsverlust bei nachträglicher Quantisierung zu messen, würde ein bereits auf Kompression trainiertes Modell den Effekt der Quantisierungsverfahren selbst verschleiern.
 Die Ergebnisse wären nicht mehr auf das Kompressionsverfahren, sondern auf die Trainingsoptimierung des Modells zurückführbar.
