@@ -12,8 +12,9 @@ In Szenarien mit zehn oder hundert Millionen Dokumenten übersteigt der Ressourc
 Hinzu kommt, dass jede Suchanfrage im Brute-Force-Fall eine vollständige Distanzberechnung gegen alle gespeicherten Vektoren erfordert, was die Antwortlatenz linear mit der Korpusgröße ansteigen lässt.
 \par
 Besonders deutlich wird dieses Spannungsfeld im Kontext agentenbasierter KI-Systeme.
-Protokolle wie das Model Context Protocol (MCP) \cite{anthropic_2024_mcp} ermöglichen es Sprachmodellen, zur Laufzeit auf externe Werkzeuge zuzugreifen und dabei Retrieval-Operationen auszuführen.
+Solche Systeme ermöglichen es Sprachmodellen, zur Laufzeit auf externe Werkzeuge zuzugreifen und dabei Retrieval-Operationen auszuführen.
 Die Echtzeit-Anforderungen solcher Architekturen verschärfen den Bedarf an kompakten, schnell durchsuchbaren Repräsentationen.
+Dies ist jedoch nur ein Beispiel für ein breiteres Praxisfeld, das von lokaler Suche auf Endgeräten bis zu kostenoptimierten Retrieval-Diensten in der Cloud reicht und in dem Speicher- und Kostenbudgets die einsetzbare Repräsentation maßgeblich bestimmen.
 %
 \section{Quantisierung als Lösungsansatz}
 %
@@ -65,7 +66,7 @@ Dieser schrittweise Aufbau ist methodisch notwendig, da er es ermöglicht, Quali
 %
 \section{Aufbau der Arbeit}
 %
-Kapitel~\ref{chap:grundlagen} legt die theoretischen Grundlagen zu Embeddings, Quantisierungsverfahren und dem agentenbasierten Anwendungskontext.
+Kapitel~\ref{chap:grundlagen} legt die theoretischen Grundlagen zu Embeddings, Quantisierungsverfahren und dem praktischen Anwendungskontext vektorbasierter Suche.
 Die Methodik in Kapitel~\ref{chap:methodik} beschreibt den experimentellen Aufbau, die Datensätze und die Evaluationsmetriken.
 Die Ergebnisse werden im Ergebniskapitel entlang der sechs Phasen dargestellt und diskutiert.
 Die Arbeit schließt mit einer Zusammenfassung der zentralen Erkenntnisse und einem Ausblick auf weiterführende Fragestellungen.
