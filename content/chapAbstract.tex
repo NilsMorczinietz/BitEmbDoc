@@ -1,8 +1,11 @@
-\chapter*{Kurzfassung/\emph{Abstract}}
+\chapter*{Kurzfassung}
 \label{chap:abstract}
-%
-Eine Kurzfassung (wenn verlangt) in Deutsch und/oder in Englisch (\emph{Abstract}) umfasst auf etwa~1/2 bis~1 Seite die Darstellung der Problemstellung, der angewandten Methode(n) und des wichtigsten Ergebnisses.
-\par
-Wie man ein gelungenes Abstract verfasst, erfahren Sie in den Seminaren oder der Beratung des Schreibzentrums der Kompetenzwerkstatt\footnote{\href{https://www.th-koeln.de/schreibzentrum}{https://www.th-koeln.de/schreibzentrum}}.
-\par
-Schlagwörter/Schlüsselwörter: evtl. Angabe von~3 bis~10 Schlagwörtern.
+
+Embedding-basierte Vektorsuchsysteme bilden das Rückgrat moderner Informationsrückgewinnung und agentenbasierter KI-Architekturen. Mit wachsenden Dokumentkorpora steigen Speicherbedarf und Betriebskosten hochdimensionaler Float32-Vektoren jedoch drastisch an. Die nachträgliche Quantisierung auf wenige Bits pro Dimension verspricht erhebliche Speichervorteile, führt jedoch unweigerlich zu Informationsverlusten. 
+
+In dieser Arbeit wird der Einfluss von Quantisierung und Dimensionsreduktion auf die Retrieval-Qualität und den Ressourcenbedarf systematisch und kausal untersucht. Anhand eines kontrollierten Sechs-Phasen-Experiments auf Basis des Embedding-Modells \texttt{bge-large-en-v1.5} und dreier heterogener BEIR-Datensätze (SciFact, FiQA, TREC-COVID) wird die Erhaltung geometrischer Raumeigenschaften, Distanzkorrelationen, Nachbarschaften und Retrieval-Metriken (NDCG@10, Recall@100) über verschiedene Bittiefen (1 bis 8~Bit) sowie PCA-Zielstufen evaluiert. Verglichen werden naive Quantisierungsansätze mit dem rotationsbasierten Verfahren TurboQuant.
+
+Die Ergebnisse zeigen, dass eine Kompression bis 4-Bit praktisch verlustfrei bleibt und über 99{,}5\,\% der Float32-Retrieval-Qualität bei einer Speicherreduktion um das 7{,}8-Fache wahrt. Für kostenoptimierte Cloud-Systeme bietet 2-Bit bei voller Dimension (1024d) den besten Kompromiss mit 98{,}1\,\% erhaltener Qualität und 15-facher Speicherersparnis, was in einer modellierten AWS-Infrastruktur über 93\,\% der monatlichen Instanzkosten einspart. Selbst 1-Bit-Konfigurationen behalten eine hohe Trustworthiness und eignen sich für zweistufige Filterstrukturen sowie lokale On-Device-Szenarien mit 100\,000 bis 500\,000 Vektoren unterhalb von 50~MiB Arbeitsspeicher. Die geometrische Analyse belegt zudem, dass TurboQuant durch orthogonale Rotation das bei nativer Binarisierung auftretende Verdünnungsparadox unter Dimensionsreduktion erfolgreich verhindert.
+
+\vspace{0.5cm}
+\noindent\textbf{Schlagwörter:} Vektor-Embeddings, Quantisierung, TurboQuant, Semantische Suche, Information Retrieval, Matryoshka-Reduktion, Skalierbarkeit
