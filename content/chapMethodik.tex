@@ -540,11 +540,13 @@ Diese Größenordnung deckt typische lokale Bestände ab: App-Hilfen, persönlic
 %
 Für Cloud-Szenarien wird der Speicherbedarf auf grobe AWS-EC2-Instanzklassen abgebildet.
 Die Kostenrechnung ist als betriebswirtschaftliche Größenordnung zu verstehen, nicht als exakter Beschaffungsplan.
-Sie verwendet On-Demand-Preise für typische Instanzen mit ausreichendem Arbeitsspeicher.
+Die konkrete Preisquelle ist die regionale Amazon-EC2-Preisliste für \texttt{eu-central-1} \cite{aws_ec2_price_list_eu_central_1}; die AWS-Dokumentation zur Price List Bulk API beschreibt den Zugriff auf solche Preislistendateien \cite{aws_price_list_bulk_api}. Aus der CSV werden die Zeilen für On-Demand, Linux, Shared Tenancy, Stundenabrechnung, ohne vorinstallierte Zusatzsoftware und die Region \texttt{eu-central-1} gefiltert. Die Monatskosten ergeben sich explizit aus $\text{Stundenpreis} \times 730$, wobei die 730~Stunden der Annahme des AWS Pricing Calculator entsprechen \cite{aws_pricing_calculator_assumptions}.
 Die Zuordnung lautet: Float32 bei 10~Millionen Vektoren benötigt eine speicherstärkere Instanzklasse mit 64~GiB RAM, \texttt{tq\_4bit} passt in eine 8-GiB-Instanz, und \texttt{tq\_2bit} passt in eine 4-GiB-Instanz.
+Die RAM-Ausstattung der gewählten Instanztypen wird den AWS-Instanzspezifikationen entnommen: \texttt{r6i.2xlarge} aus den memory-optimized Instanzen, \texttt{m6g.large} und \texttt{t4g.medium} aus den general-purpose Instanzen \cite{aws_ec2_memory_optimized_specs,aws_ec2_general_purpose_specs}.
 Konkret wird die Float32-Referenz einer speicheroptimierten \texttt{r6i}-Instanz zugeordnet, während die komprimierten Arbeitspunkte in günstigere Allzweck- beziehungsweise Graviton-Instanzen (\texttt{t4g}, \texttt{m6g}) fallen.
 Die Ersparnis speist sich damit aus zwei Quellen: dem geringeren Speicherbedarf und dem dadurch möglichen Wechsel der Instanzfamilie.
 Die Zuordnung der Float32-Referenz zur speicherstarken \texttt{r6i}-Instanz ist eine bewusst konservative Annahme und markiert das obere Ende der darstellbaren Ersparnis; die berichteten Prozentwerte sind entsprechend als Best-Case-Größenordnung und nicht als garantierter Mindestwert zu verstehen.
+Da AWS-Listenpreise regions- und zeitabhängig sind, gilt die Rechnung nur für den angegebenen Abrufzeitpunkt, die verwendete Preislistenversion und die gewählte Region.
 Das Edge/Mobile-Szenario wird nicht als Cloud-Kostenfall modelliert, weil der Index lokal betrieben wird.
 %
 \section{Synthese und Interpretation}
@@ -553,7 +555,7 @@ Die abschließende Analyse verknüpft die Ergebnisse aller Phasen zu einer kohä
 %
 Konkret werden vier Leitfragen beantwortet:
 \begin{enumerate}
-  \item \textbf{Was bleibt erhalten?} Welche Aspekte der semantischen Struktur (globale Distanzen, lokale Nachbarschaften, Cluster) überleben die Quantisierung intakt?
+  \item \textbf{Was bleibt erhalten?} Welche Aspekte der semantischen Struktur (globale Distanzen, lokale Nachbarschaften und Retrieval-Rangordnungen) überleben die Quantisierung intakt?
   \item \textbf{Was geht verloren?} Wo treten systematische Verzerrungen auf, und lassen sich diese aus den in Phase~1 identifizierten Raumeigenschaften erklären?
   \item \textbf{Was bedeutet das für die Praxis?} Ab welchem Qualitätsverlust wird der Speicher- und Geschwindigkeitsvorteil durch unbrauchbare Suchergebnisse zunichte gemacht?
   \item \textbf{Praktische Konfiguration:} Welche TurboQuant-Arbeitspunkte ergeben sich für mobile, kostenoptimierte und hochpräzise Einsatzszenarien?

@@ -884,24 +884,24 @@ Die Balkenhöhen wachsen linear mit der Vektoranzahl und mit der Dimension; die 
 Für das mobile Szenario ist die wichtigste Erkenntnis, dass der reine Vektorspeicher unterhalb von 1~Million Embeddings nicht der dominante Engpass sein muss.
 Bei \texttt{tq\_1bit 768d} belegt ein Index mit 100\,000 Vektoren nur 9{,}16~MiB, 500\,000 Vektoren belegen 45{,}8~MiB und 1~Million Vektoren 91{,}6~MiB.
 Praktische Grenzen entstehen daher eher durch Zusatzstrukturen: ANN-Indizes, Text- und Metadatenhaltung, App-Runtime und Speicherlimits des Betriebssystems.
-Der Bereich von 100\,000 bis 500\,000 Embeddings erscheint als realistischer On-Device-Korridor.
+Der Bereich von 100\,000 bis 500\,000 Embeddings erscheint als realistischer On-Device-Korridor. Diese Aussage beschreibt jedoch nur den reinen Vektorspeicher; sie ersetzt keine gerätespezifische Speicherbudget-Analyse für ein konkretes mobiles Betriebssystem oder eine konkrete App.
 %
 \subsection{Cloud-Kosten und betriebliche Relevanz}
 %
-Für Cloud-Szenarien übersetzt sich die Speicherreduktion direkt in kleinere Instanzklassen.
-Tabelle~\ref{tab:phase6_aws} zeigt die modellierte Kostenwirkung für einen 10-Millionen-Vektorindex.
+Für Cloud-Szenarien erlaubt die Speicherreduktion in der modellierten Rechnung den Wechsel in kleinere Instanzklassen.
+Tabelle~\ref{tab:phase6_aws} zeigt die modellierte Kostenwirkung für einen 10-Millionen-Vektorindex. Die konkreten Stundenpreise stammen aus der regionalen AWS-Preislisten-CSV \cite{aws_ec2_price_list_eu_central_1}: \texttt{r6i.2xlarge} mit 0{,}6080~USD/h, \texttt{m6g.large} mit 0{,}0920~USD/h und \texttt{t4g.medium} mit 0{,}0384~USD/h. Die Monatsbeträge sind keine separaten AWS-Monatsangebote, sondern diese Stundenpreise multipliziert mit 730~Stunden; die RAM-Ausstattung der Instanzen stammt aus den AWS-Instanzspezifikationen \cite{aws_ec2_general_purpose_specs,aws_ec2_memory_optimized_specs}.
 %
 \begin{table}[htbp]
   \centering
-  \caption{Grobe AWS-Kostenrechnung für einen 10-Millionen-Vektorindex. Grundlage sind EC2-On-Demand-Listenpreise (Linux) in der Region eu-central-1, abgerufen am 23.08.2026, umgerechnet mit 730~Stunden pro Monat. Die Werte sind als On-Demand-Größenordnung zu interpretieren.}
+  \caption{Grobe AWS-Kostenrechnung für einen 10-Millionen-Vektorindex. Grundlage sind EC2-On-Demand-Listenpreise (Linux) aus der AWS Price List Bulk API für die Region eu-central-1, abgerufen am 25.08.2026 und veröffentlicht am 24.08.2026, umgerechnet mit 730~Stunden pro Monat gemäß AWS-Pricing-Calculator-Annahme \cite{aws_ec2_price_list_eu_central_1,aws_pricing_calculator_assumptions}. Die Werte sind als On-Demand-Größenordnung zu interpretieren.}
   \label{tab:phase6_aws}
   \begin{tabular}{lcccc}
     \toprule
     Szenario & Instanz & RAM & Kosten/Monat & Ersparnis \\
     \midrule
-    Float32 & \texttt{r6i.2xlarge} & 64~GiB & 368{,}00~USD & -- \\
-    Enterprise & \texttt{m6g.large} & 8~GiB & 49{,}00~USD & 86{,}7\,\% \\
-    Business & \texttt{t4g.medium} & 4~GiB & 24{,}50~USD & 93{,}3\,\% \\
+    Float32 & \texttt{r6i.2xlarge} & 64~GiB & 443{,}84~USD & -- \\
+    Enterprise & \texttt{m6g.large} & 8~GiB & 67{,}16~USD & 84{,}9\,\% \\
+    Business & \texttt{t4g.medium} & 4~GiB & 28{,}03~USD & 93{,}7\,\% \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -913,9 +913,9 @@ Tabelle~\ref{tab:phase6_aws} zeigt die modellierte Kostenwirkung für einen 10-M
   \label{fig:phase6_aws_costs}
 \end{figure}
 %
-Die Kostenrechnung ist nicht als universelle Preisprognose zu verstehen, sondern als Größenordnung.
-Sie zeigt dennoch eine klare betriebliche Konsequenz: \texttt{tq\_2bit 1024d} reduziert den modellierten Monatsbetrag von 368~USD auf 24{,}50~USD.
-Das entspricht einer Ersparnis von 343{,}50~USD pro Monat beziehungsweise 4\,122~USD pro Jahr für einen einzelnen 10-Millionen-Vektorindex.
+Die Kostenrechnung ist nicht als universelle Preisprognose zu verstehen, sondern als regions- und zeitabhängige Größenordnung.
+Sie zeigt dennoch eine klare betriebliche Konsequenz: \texttt{tq\_2bit 1024d} reduziert den modellierten Monatsbetrag von 443{,}84~USD auf 28{,}03~USD.
+Das entspricht einer Ersparnis von 415{,}81~USD pro Monat beziehungsweise rund 4\,990~USD pro Jahr für einen einzelnen 10-Millionen-Vektorindex.
 Bei mehreren Indizes oder mandantengetrennten Deployments skaliert dieser Effekt entsprechend.
 %
 Zwei Einschränkungen sind bei der Interpretation dieser Zahlen zu beachten.
@@ -932,7 +932,7 @@ Phase~5 hat gezeigt, dass die Kompression im gemessenen NumPy-Pfad primär einen
 Phase~6 bestätigt die praktische Relevanz der in den vorherigen Phasen gemessenen Kompressionseffekte.
 Für hohe Qualitätsanforderungen ist \texttt{tq\_4bit 1024d} die konservative Wahl: Der Speicherbedarf sinkt um den Faktor~7{,}8, während die gemessene Qualität praktisch erhalten bleibt.
 Für kostenoptimierte Cloud-Suche ist \texttt{tq\_2bit 1024d} der stärkere Arbeitspunkt, weil der Speicher um den Faktor~15 sinkt und die Qualität bei 98{,}1\,\% bleibt.
-Für lokale Suche ist \texttt{tq\_1bit 768d} besonders interessant, weil es unterhalb von 1~Million Vektoren in einem Speicherbereich liegt, der auf mobilen Geräten realistisch ist.
+Für lokale Suche ist \texttt{tq\_1bit 768d} besonders interessant, weil es unterhalb von 1~Million Vektoren in einem Speicherbereich liegt, der für mobile und lokale Anwendungen plausibel erscheint.
 %
 Die naive Quantisierung wird in dieser Phase nicht weiter ausgewertet, weil sie bei gleicher Bittiefe und Dimensionszahl keine andere Speicherrechnung erzeugt.
 Die Abwägung zwischen naiver Quantisierung und TurboQuant ist damit keine Frage des Speichers, sondern der Qualitätsrobustheit.
