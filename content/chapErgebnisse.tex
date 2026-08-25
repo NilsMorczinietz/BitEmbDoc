@@ -727,7 +727,7 @@ Die Ursache ist die Distanzmetrik selbst: Die Hamming-Distanz zweier Bitvektoren
 Die Multi-Bit-Verfahren (2-Bit bis 8-Bit) sind hingegen langsamer als Float32, weil vor der Distanzberechnung entpackt und dequantisiert werden muss.
 Naive und rotierte Varianten sind hier praktisch gleich schnell, da die Rotation nur den Indexaufbau betrifft und nicht zur Suchlaufzeit zählt.
 %
-\paragraph{Top-$k$-Suche: Float32 dominiert.}
+\paragraph{Top-$\boldsymbol{k}$-Suche: Float32 dominiert.}
 Bei der Brute-Force-Top-$k$-Suche kehrt sich das Bild um.
 Float32 ist hier mit rund $24{,}7$~ms (etwa $40\,000$~Queries/s) das schnellste Verfahren, während alle komprimierten Varianten deutlich langsamer sind.
 Der Grund liegt in der Struktur der Operation: Die Top-$k$-Suche ist im Kern eine dichte Matrixmultiplikation, für die NumPy und BLAS hochgradig optimierte Routinen bereitstellen.
