@@ -869,6 +869,7 @@ Bei sehr harten Speichergrenzen sind 384d und 512d attraktiv: Selbst 500\,000 Ve
 Der beste gemessene mobile Arbeitspunkt ist jedoch 768d.
 Er benötigt bei 1~Million Vektoren 91{,}6~MiB und erreicht 93{,}9\,\% der Float32-Qualität.
 Die Erhöhung auf 1024d bringt im SciFact-Ergebnis keinen zusätzlichen Qualitätsgewinn, erhöht aber den Speicherbedarf auf 122{,}1~MiB pro 1~Million Vektoren.
+Auffällig ist, dass die Qualität nicht streng monoton mit der Dimension steigt: 512d liegt mit 90{,}4\,\% minimal unter 384d (90{,}5\,\%), und 1024d liegt mit 90{,}3\,\% unter 768d (93{,}9\,\%). Diese kleinen Nichtmonotonien sind für eine einzelne Bittiefe auf einem einzelnen Datensatz zu erwarten, da die 1-Bit-Quantisierung nach PCA-Reduktion je nach beibehaltenem Varianzanteil unterschiedlich stark von Vorzeichenrauschen betroffen ist; die Abweichungen liegen im Bereich weniger Zehntel Prozentpunkte und sind daher als Messrauschen und nicht als systematischer Effekt zu werten.
 %
 Abbildung~\ref{fig:phase6_mobile_tq_scaling} erweitert diese Sicht auf alle TurboQuant-Bittiefen bis 8~Bit.
 Für jede Bittiefe werden die Dimensionen als gruppierte Balken über den betrachteten Indexgrößen dargestellt.
