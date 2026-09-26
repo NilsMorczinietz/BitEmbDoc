@@ -16,7 +16,7 @@ Tabelle~\ref{tab:phase1_norms} fasst die Normstatistiken über alle drei Datens�
 %
 \begin{table}[htbp]
   \centering
-  \caption{L2-Normverteilung der Float32-Embeddings. CV bezeichnet den Variationskoeffizienten $\sigma / \mu$.}
+  \caption[L2-Normverteilung der Float32-Embeddings]{L2-Normverteilung der Float32-Embeddings. CV bezeichnet den Variationskoeffizienten $\sigma / \mu$.}
   \label{tab:phase1_norms}
   \begin{tabular}{lccc}
     \toprule
@@ -32,12 +32,17 @@ Tabelle~\ref{tab:phase1_norms} fasst die Normstatistiken über alle drei Datens�
 Alle Normen liegen bis auf Float32-Maschinengenauigkeit bei~1{,}0 (gemessener Bereich $[0{,}9999999,\ 1{,}0000001]$).
 Die Variationskoeffizienten von $\text{CV} \approx 3 \times 10^{-8}$ liegen in der Größenordnung der Float32-Maschinengenauigkeit ($\epsilon_{\text{float32}} \approx 1{,}2 \times 10^{-7}$) und stellen damit numerisches Rauschen dar, keine inhaltliche Variation.
 Die Vektoren liegen damit auf der Einheitshypersphäre.
+Die Statistik umfasst jeden einzelnen Vektor der drei vollständigen Korpora (5\,183, 57\,638 und 171\,332 Dokumente); eine Stichprobenziehung findet in Phase~1 nicht statt.
+Die Einheitslänge ist dabei nicht das Ergebnis einer Normalisierung innerhalb der Analyse, sondern eine Eigenschaft der Embedding-Erzeugung: Der Encoder skaliert jeden Ausgabevektor auf L2-Norm~1 (vgl.\ Abschnitt~\ref{sec:methodik_repraeraeume}).
+Die Messung bestätigt, dass diese Normierung für alle Vektoren bis auf Rundungsfehler exakt gilt.
 %
 \paragraph{Interpretation.}
-Die Binarisierung verwirft die gesamte Norminformation (vgl.\ Abschnitt~\ref{sec:methodik_phase1}).
-Ein Informationsverlust entsteht dadurch nur, wenn die Norm Unterscheidungskraft zwischen Dokumenten trägt. Bei konstanter Norm ist das nicht der Fall.
-Der einzige verlustbehaftete Anteil der Binarisierung betrifft somit die Beträge innerhalb der Dimensionen: Wie weit ein Wert von Null entfernt ist, geht verloren, das Vorzeichen bleibt erhalten.
-Diese günstige Voraussetzung ist keine Selbstverständlichkeit; Embedding-Modelle ohne explizite L2-Normierung würden hier anders abschneiden.
+Die Binarisierung nach Gleichung~\ref{eq:binarize} kodiert jede Komponente $x_i$ allein anhand ihres Vorzeichens.
+Die L2-Norm eines Vektors geht in diese Kodierung nicht ein: Zwei Vektoren mit identischem Vorzeichenmuster, aber unterschiedlicher Norm erhalten denselben Bitvektor (vgl.\ Abschnitt~\ref{sec:grundlagen_binaer}).
+Ein Informationsverlust entsteht dadurch nur, wenn sich die Dokumente in ihrer Norm unterscheiden, die Norm also zur Unterscheidung von Dokumenten beiträgt.
+Da alle Normen hier bis auf Rundungsfehler gleich~1 sind, enthält die Norm keine dokumentspezifische Information; ihr Wegfall ist somit verlustfrei.
+Der verbleibende Informationsverlust der Binarisierung betrifft ausschließlich die Beträge $|x_i|$ der einzelnen Komponenten: Wie weit ein Wert von Null entfernt liegt, geht verloren, das Vorzeichen bleibt erhalten.
+Diese günstige Voraussetzung ist keine Selbstverständlichkeit; bei Embedding-Modellen ohne explizite L2-Normierung würde die Binarisierung zusätzlich die in der Norm kodierte Information verlieren.
 %
 \subsection{Dimensionsstatistiken}
 %
@@ -46,7 +51,7 @@ Die zugehörige Verteilung über alle 1024 Dimensionen ist in Abbildung~\ref{fig
 %
 \begin{table}[htbp]
   \centering
-  \caption{Dimensionsstatistiken über alle 1024 Dimensionen. Die Schwellwerte $|\text{skew}| > 1{,}0$ und $\text{kurtosis} > 3{,}0$ (Fisher-Kurtosis, Normalverteilung $= 0$) markieren problematische Dimensionen für Quantisierung.}
+  \caption[Dimensionsstatistiken über alle 1024 Dimensionen]{Dimensionsstatistiken über alle 1024 Dimensionen. Die Schwellwerte $|\text{skew}| > 1{,}0$ und $\text{kurtosis} > 3{,}0$ (Fisher-Kurtosis, Normalverteilung $= 0$) entsprechen den in Abschnitt~\ref{sec:methodik_dimstats} festgelegten Kriterien für quantisierungskritische Dimensionen; $n_{\text{probl.}}$ zählt die Dimensionen, die mindestens einen Schwellwert überschreiten.}
   \label{tab:phase1_dimstats}
   \begin{tabular}{lccccc}
     \toprule
@@ -61,8 +66,8 @@ Die zugehörige Verteilung über alle 1024 Dimensionen ist in Abbildung~\ref{fig
 %
 \begin{figure}[htbp]
   \centering
-  \includegraphics[width=\textwidth]{dimension_distribution.pdf}
-  \caption{Verteilung der Schiefe und Kurtosis über alle 1024 Dimensionen für die drei Datensätze. Die gestrichelten Linien markieren die Schwellwerte $|\text{skew}| = 1{,}0$ und $\text{kurtosis} = 3{,}0$, ab denen Quantisierungsprobleme zu erwarten wären.}
+  \includegraphics[width=0.85\textwidth]{dimension_distribution.pdf}
+  \caption[Verteilung von Schiefe und Kurtosis über alle Dimensionen]{Verteilung der Schiefe und Kurtosis über alle 1024 Dimensionen für die drei Datensätze. Die gestrichelten Linien markieren die Schwellwerte $|\text{skew}| = 1{,}0$ und $\text{kurtosis} = 3{,}0$, ab denen Quantisierungsprobleme zu erwarten wären (vgl.\ Abschnitt~\ref{sec:methodik_dimstats}).}
   \label{fig:dimension_distribution}
 \end{figure}
 %
@@ -94,7 +99,7 @@ Das zugehörige PCA-Varianzspektrum und die kumulative erklärte Varianz sind in
 %
 \begin{table}[htbp]
   \centering
-  \caption{Intrinsische Dimensionalität: TwoNN (lokale Mannigfaltigkeitsstruktur) und PCA (globale lineare Dimensionalität, 95\% erklärte Varianz). Ergänzend die kumulative erklärte Varianz $V(d)$ an den evaluierten Reduktionszielen.}
+  \caption[Intrinsische Dimensionalität nach TwoNN und PCA]{Intrinsische Dimensionalität: TwoNN (lokale Mannigfaltigkeitsstruktur) und PCA (globale lineare Dimensionalität, 95\% erklärte Varianz). Ergänzend die kumulative erklärte Varianz $V(d)$ an den evaluierten Reduktionszielen.}
   \label{tab:phase1_intdim}
   \begin{tabular}{lccccc}
     \toprule
@@ -109,15 +114,15 @@ Das zugehörige PCA-Varianzspektrum und die kumulative erklärte Varianz sind in
 %
 \begin{figure}[htbp]
   \centering
-  \includegraphics[width=\textwidth]{pca_variance_spectrum.pdf}
-  \caption{PCA-Varianzspektrum: Erklärte Varianz pro Hauptkomponente (absteigende Reihenfolge). Der schnelle Abfall der ersten Komponenten gefolgt von einem langen, flachen Schwanz zeigt die typische Varianzkonzentration in hochdimensionalen Embedding-Räumen.}
+  \includegraphics[width=0.85\textwidth]{pca_variance_spectrum.pdf}
+  \caption[PCA-Varianzspektrum]{PCA-Varianzspektrum: Erklärte Varianz pro Hauptkomponente (absteigende Reihenfolge). Der schnelle Abfall der ersten Komponenten gefolgt von einem langen, flachen Schwanz zeigt die typische Varianzkonzentration in hochdimensionalen Embedding-Räumen.}
   \label{fig:pca_variance_spectrum}
 \end{figure}
 %
 \begin{figure}[htbp]
   \centering
-  \includegraphics[width=\textwidth]{pca_cumulative_variance.pdf}
-  \caption{Kumulative erklärte Varianz als Funktion der Komponentenzahl. Die horizontale Linie markiert 95\,\%. Die vertikalen Markierungen zeigen die evaluierten PCA-Dimensionen $d \in \{64, 128, 256, 384, 512, 768, 1024\}$.}
+  \includegraphics[width=0.85\textwidth]{pca_cumulative_variance.pdf}
+  \caption[Kumulative erklärte Varianz]{Kumulative erklärte Varianz als Funktion der Komponentenzahl. Die horizontale Linie markiert 95\,\%. Die vertikalen Markierungen zeigen die evaluierten PCA-Dimensionen $d \in \{64, 128, 256, 384, 512, 768, 1024\}$.}
   \label{fig:pca_cumulative_variance}
 \end{figure}
 %
@@ -188,7 +193,7 @@ Die Werte sind über alle drei Datensätze gemittelt; die datensatzspezifischen 
 %
 \begin{table}[htbp]
   \centering
-  \caption{Distanzkorrelation bei $d = 1024$ (keine Dimensionsreduktion). Mittelwerte über drei Datensätze.}
+  \caption[Distanzkorrelation bei voller Dimensionszahl]{Distanzkorrelation bei $d = 1024$ (keine Dimensionsreduktion). Mittelwerte über drei Datensätze.}
   \label{tab:phase2_fulldim}
   \begin{tabular}{lcccc}
     \toprule
@@ -231,15 +236,15 @@ Die zentrale Beobachtung ist, dass die verschiedenen Bittiefen sehr unterschiedl
 %
 \begin{figure}[htbp]
   \centering
-  \includegraphics[width=\textwidth]{distortion_pearson_r_by_dim.pdf}
-  \caption{Pearson~$r$ als Funktion der PCA-Dimension $d$ für alle Quantisierungsmethoden. Mittelwert über drei Datensätze. Die Kurven zeigen, dass 8-Bit und 4-Bit robust gegenüber Dimensionsreduktion sind, während 1-Bit ohne Rotation bei mittleren Dimensionen kollabiert.}
+  \includegraphics[width=0.85\textwidth]{distortion_pearson_r_by_dim.pdf}
+  \caption[Pearson~$r$ als Funktion der PCA-Dimension]{Pearson~$r$ als Funktion der PCA-Dimension $d$ für alle Quantisierungsmethoden. Mittelwert über drei Datensätze. Die Kurven zeigen, dass 8-Bit und 4-Bit robust gegenüber Dimensionsreduktion sind, während 1-Bit ohne Rotation bei mittleren Dimensionen kollabiert.}
   \label{fig:phase2_pearson_by_dim}
 \end{figure}
 %
 \begin{figure}[htbp]
   \centering
-  \includegraphics[width=\textwidth]{distortion_spearman_rho_by_dim.pdf}
-  \caption{Spearman~$\rho$ als Funktion der PCA-Dimension $d$. Das Bild bestätigt die Pearson-Ergebnisse: Die Rangordnung bleibt bei 8-Bit und 4-Bit über alle Dimensionen stabil, bricht aber bei naiver 1-Bit-Quantisierung unter Dimensionsreduktion zusammen.}
+  \includegraphics[width=0.85\textwidth]{distortion_spearman_rho_by_dim.pdf}
+  \caption[Spearman~$\rho$ als Funktion der PCA-Dimension]{Spearman~$\rho$ als Funktion der PCA-Dimension $d$. Das Bild bestätigt die Pearson-Ergebnisse: Die Rangordnung bleibt bei 8-Bit und 4-Bit über alle Dimensionen stabil, bricht aber bei naiver 1-Bit-Quantisierung unter Dimensionsreduktion zusammen.}
   \label{fig:phase2_spearman_by_dim}
 \end{figure}
 %
@@ -285,8 +290,8 @@ Abbildung~\ref{fig:phase2_heatmap} fasst die gesamte Versuchsmatrix (Repräsenta
 %
 \begin{figure}[htbp]
   \centering
-  \includegraphics[width=\textwidth]{distortion_heatmap_pearson_r_scifact.pdf}
-  \caption{Heatmap der Pearson-Korrelation über die Versuchsmatrix (SciFact). Die oberen Zeilen (8-Bit, Float16) zeigen durchgehend hohe Werte, während naive 1-Bit bei mittleren Dimensionen deutlich abfällt. Die anderen Datensätze zeigen ein qualitativ identisches Bild.}
+  \includegraphics[width=0.85\textwidth]{distortion_heatmap_pearson_r_scifact.pdf}
+  \caption[Heatmap der Pearson-Korrelation (SciFact)]{Heatmap der Pearson-Korrelation über die Versuchsmatrix (SciFact). Die oberen Zeilen (8-Bit, Float16) zeigen durchgehend hohe Werte, während naive 1-Bit bei mittleren Dimensionen deutlich abfällt. Die anderen Datensätze zeigen ein qualitativ identisches Bild.}
   \label{fig:phase2_heatmap}
 \end{figure}
 %
@@ -307,8 +312,8 @@ Eine Konfiguration liegt auf der Pareto-Front, wenn keine andere Konfiguration b
 %
 \begin{figure}[htbp]
   \centering
-  \includegraphics[width=\textwidth]{distortion_pareto.pdf}
-  \caption{Pareto-Front der Distanzerhaltung: Spearman~$\rho$ als Funktion des Speicherbedarfs (Bit pro Vektor). Konfigurationen auf der Front sind nicht dominiert; es existiert keine andere Konfiguration mit gleichem oder kleinerem Speicher und besserer Rangerhaltung.}
+  \includegraphics[width=0.85\textwidth]{distortion_pareto.pdf}
+  \caption[Pareto-Front der Distanzerhaltung]{Pareto-Front der Distanzerhaltung: Spearman~$\rho$ als Funktion des Speicherbedarfs (Bit pro Vektor). Konfigurationen auf der Front sind nicht dominiert; es existiert keine andere Konfiguration mit gleichem oder kleinerem Speicher und besserer Rangerhaltung.}
   \label{fig:phase2_pareto}
 \end{figure}
 %
@@ -366,7 +371,7 @@ Tabelle~\ref{tab:phase3_fulldim} zeigt Overlap und Trustworthiness bei $d = 1024
 %
 \begin{table}[htbp]
   \centering
-  \caption{Neighborhood Overlap und Trustworthiness bei $d = 1024$ und $k = 10$ (keine Dimensionsreduktion). Mittelwerte über drei Datensätze. Die Zufallsbaseline für Overlap liegt bei $k/N \approx 0{,}002$.}
+  \caption[Neighborhood Overlap und Trustworthiness bei voller Dimensionszahl]{Neighborhood Overlap und Trustworthiness bei $d = 1024$ und $k = 10$ (keine Dimensionsreduktion). Mittelwerte über drei Datensätze. Die Zufallsbaseline für Overlap liegt bei $k/N \approx 0{,}002$.}
   \label{tab:phase3_fulldim}
   \begin{tabular}{lcc}
     \toprule
@@ -413,15 +418,15 @@ Die Kurven und die folgenden Werte beziehen sich auf $k = 20$; das Muster ist f�
 %
 \begin{figure}[htbp]
   \centering
-  \includegraphics[width=\textwidth]{neighborhood_overlap_by_dim_k20.pdf}
-  \caption{Neighborhood Overlap als Funktion der PCA-Dimension $d$ (aggregiert über drei Datensätze, $k = 20$). Höhere Bittiefen erhalten die Nachbarschaft über alle Dimensionen robust, während 1-Bit ohne Rotation bei mittleren Dimensionen einbricht.}
+  \includegraphics[width=0.85\textwidth]{neighborhood_overlap_by_dim_k20.pdf}
+  \caption[Neighborhood Overlap als Funktion der PCA-Dimension]{Neighborhood Overlap als Funktion der PCA-Dimension $d$ (aggregiert über drei Datensätze, $k = 20$). Höhere Bittiefen erhalten die Nachbarschaft über alle Dimensionen robust, während 1-Bit ohne Rotation bei mittleren Dimensionen einbricht.}
   \label{fig:phase3_overlap_by_dim}
 \end{figure}
 %
 \begin{figure}[htbp]
   \centering
-  \includegraphics[width=\textwidth]{neighborhood_trustworthiness_by_dim_k20.pdf}
-  \caption{Trustworthiness als Funktion der PCA-Dimension $d$ (aggregiert über drei Datensätze, $k = 20$). Alle rotierten Verfahren bleiben nahe~1; nur naive 1-Bit fällt unter Dimensionsreduktion sichtbar ab.}
+  \includegraphics[width=0.85\textwidth]{neighborhood_trustworthiness_by_dim_k20.pdf}
+  \caption[Trustworthiness als Funktion der PCA-Dimension]{Trustworthiness als Funktion der PCA-Dimension $d$ (aggregiert über drei Datensätze, $k = 20$). Alle rotierten Verfahren bleiben nahe~1; nur naive 1-Bit fällt unter Dimensionsreduktion sichtbar ab.}
   \label{fig:phase3_trust_by_dim}
 \end{figure}
 %
@@ -449,8 +454,8 @@ Abbildung~\ref{fig:phase3_overlap_by_k} zeigt diesen schwachen Zusammenhang übe
 %
 \begin{figure}[htbp]
   \centering
-  \includegraphics[width=\textwidth]{overlap_by_k.pdf}
-  \caption{Neighborhood Overlap als Funktion der Nachbarschaftsgröße $k$ (aggregiert über drei Datensätze, $d = 1024$). Der Overlap ändert sich über $k \in \{5, 10, 20\}$ nur geringfügig.}
+  \includegraphics[width=0.7\textwidth]{overlap_by_k.pdf}
+  \caption[Neighborhood Overlap als Funktion der Nachbarschaftsgröße]{Neighborhood Overlap als Funktion der Nachbarschaftsgröße $k$ (aggregiert über drei Datensätze, $d = 1024$). Der Overlap ändert sich über $k \in \{5, 10, 20\}$ nur geringfügig.}
   \label{fig:phase3_overlap_by_k}
 \end{figure}
 %
@@ -460,8 +465,8 @@ Abbildung~\ref{fig:phase3_pareto} zeigt die Pareto-Front für den Overlap in Abh
 %
 \begin{figure}[htbp]
   \centering
-  \includegraphics[width=\textwidth]{neighborhood_pareto_overlap_k20.pdf}
-  \caption{Pareto-Front der Nachbarschaftserhaltung: Overlap als Funktion des Speicherbedarfs (Bit pro Vektor, $k = 20$). Konfigurationen auf der Front sind nicht dominiert.}
+  \includegraphics[width=0.8\textwidth]{neighborhood_pareto_overlap_k20.pdf}
+  \caption[Pareto-Front der Nachbarschaftserhaltung]{Pareto-Front der Nachbarschaftserhaltung: Overlap als Funktion des Speicherbedarfs (Bit pro Vektor, $k = 20$). Konfigurationen auf der Front sind nicht dominiert.}
   \label{fig:phase3_pareto}
 \end{figure}
 %
@@ -502,7 +507,7 @@ Tabelle~\ref{tab:phase4_fulldim} zeigt die Retrieval-Metriken bei $d = 1024$.
 %
 \begin{table}[htbp]
   \centering
-  \caption{Retrieval-Metriken bei $d = 1024$ (keine Dimensionsreduktion). Mittelwerte über drei Datensätze. Die relative Qualität bezieht sich auf NDCG@10 gegenüber Float32.}
+  \caption[Retrieval-Metriken bei voller Dimensionszahl]{Retrieval-Metriken bei $d = 1024$ (keine Dimensionsreduktion). Mittelwerte über drei Datensätze. Die relative Qualität bezieht sich auf NDCG@10 gegenüber Float32.}
   \label{tab:phase4_fulldim}
   \begin{tabular}{lccccc}
     \toprule
@@ -549,8 +554,8 @@ Abbildung~\ref{fig:phase4_ndcg_by_dim} zeigt die NDCG@10 als Funktion der PCA-Di
 %
 \begin{figure}[htbp]
   \centering
-  \includegraphics[width=\textwidth]{retrieval_ndcg_at_10_by_dim.pdf}
-  \caption{NDCG@10 als Funktion der PCA-Dimension $d$ (Mittelwert über drei Datensätze). Höhere Bittiefen folgen der Float32-Kurve eng, während 1-Bit deutlich abfällt.}
+  \includegraphics[width=0.85\textwidth]{retrieval_ndcg_at_10_by_dim.pdf}
+  \caption[NDCG@10 als Funktion der PCA-Dimension]{NDCG@10 als Funktion der PCA-Dimension $d$ (Mittelwert über drei Datensätze). Höhere Bittiefen folgen der Float32-Kurve eng, während 1-Bit deutlich abfällt.}
   \label{fig:phase4_ndcg_by_dim}
 \end{figure}
 %
@@ -572,8 +577,8 @@ Abbildung~\ref{fig:phase4_recall100} zeigt Recall@100, die für zweistufige Retr
 %
 \begin{figure}[htbp]
   \centering
-  \includegraphics[width=\textwidth]{retrieval_recall_at_100_by_dim.pdf}
-  \caption{Recall@100 als Funktion der PCA-Dimension $d$ (Mittelwert über drei Datensätze). Auch bei starker Kompression bleibt ein großer Teil der relevanten Dokumente in der Kandidatenmenge.}
+  \includegraphics[width=0.85\textwidth]{retrieval_recall_at_100_by_dim.pdf}
+  \caption[Recall@100 als Funktion der PCA-Dimension]{Recall@100 als Funktion der PCA-Dimension $d$ (Mittelwert über drei Datensätze). Auch bei starker Kompression bleibt ein großer Teil der relevanten Dokumente in der Kandidatenmenge.}
   \label{fig:phase4_recall100}
 \end{figure}
 %
@@ -588,8 +593,8 @@ Abbildung~\ref{fig:phase4_pareto} zeigt die Pareto-Front der NDCG@10 gegen den S
 %
 \begin{figure}[htbp]
   \centering
-  \includegraphics[width=\textwidth]{retrieval_pareto_ndcg_at_10.pdf}
-  \caption{Pareto-Front der Retrieval-Qualität: NDCG@10 als Funktion des Speicherbedarfs (Bit pro Vektor). Konfigurationen auf der Front sind nicht dominiert.}
+  \includegraphics[width=0.85\textwidth]{retrieval_pareto_ndcg_at_10.pdf}
+  \caption[Pareto-Front der Retrieval-Qualität]{Pareto-Front der Retrieval-Qualität: NDCG@10 als Funktion des Speicherbedarfs (Bit pro Vektor). Konfigurationen auf der Front sind nicht dominiert.}
   \label{fig:phase4_pareto}
 \end{figure}
 %
@@ -636,7 +641,7 @@ Tabelle~\ref{tab:phase5_memory} stellt den theoretischen Speicherbedarf bei voll
 \begin{table}[htbp]
   \centering
   \small
-  \caption{Speicherbedarf pro Vektor bei $d = 1024$ und $N = 1\,000$ Vektoren. Der theoretische Wert beschreibt die ideale Bitpackung, das NumPy-Layout den tatsächlich gemessenen Verbrauch inklusive Dequantisierungsmetadaten. Der Kompressionsfaktor (CR) bezieht sich auf Float32 bei $d = 1024$. Die Werte sind über alle drei Datensätze identisch.}
+  \caption[Speicherbedarf pro Vektor bei voller Dimensionszahl]{Speicherbedarf pro Vektor bei $d = 1024$ und $N = 1\,000$ Vektoren. Der theoretische Wert beschreibt die ideale Bitpackung, das NumPy-Layout den tatsächlich gemessenen Verbrauch inklusive Dequantisierungsmetadaten. Der Kompressionsfaktor (CR) bezieht sich auf Float32 bei $d = 1024$. Die Werte sind über alle drei Datensätze identisch.}
   \label{tab:phase5_memory}
   \begin{tabular}{lcccc}
     \toprule
@@ -655,7 +660,7 @@ Tabelle~\ref{tab:phase5_memory} stellt den theoretischen Speicherbedarf bei voll
 \begin{figure}[htbp]
   \centering
   \includegraphics[width=\textwidth,trim={0 2099.92pt 0 773.5pt},clip]{memory_theoretical_vs_numpy.pdf}
-  \caption{Theoretischer gegenüber praktisch gemessenem Speicherbedarf pro Repräsentation (exemplarisch für $d = 1024$; die Werte sind über alle Datensätze identisch). Das NumPy-Layout liegt für alle Verfahren nahe an der idealen Bitpackung; die kleine Abweichung bei 2-Bit bis 8-Bit entsteht durch die Dequantisierungsmetadaten.}
+  \caption[Theoretischer und gemessener Speicherbedarf pro Repräsentation]{Theoretischer gegenüber praktisch gemessenem Speicherbedarf pro Repräsentation (exemplarisch für $d = 1024$; die Werte sind über alle Datensätze identisch). Das NumPy-Layout liegt für alle Verfahren nahe an der idealen Bitpackung; die kleine Abweichung bei 2-Bit bis 8-Bit entsteht durch die Dequantisierungsmetadaten.}
   \label{fig:phase5_memory_theo_vs_numpy}
 \end{figure}
 %
@@ -676,7 +681,7 @@ Ob eine solche aggressive Konfiguration brauchbar bleibt, entscheidet jedoch nic
 \begin{figure}[htbp]
   \centering
   \includegraphics[width=\textwidth]{memory_compression_by_dim.pdf}
-  \caption{Kompressionsfaktor gegenüber Float32 bei $d = 1024$ als Funktion der PCA-Dimension. Kleinere Dimensionen und niedrigere Bittiefen wirken multiplikativ; 1-Bit liegt durchgehend oben, Float32 bildet die Baseline.}
+  \caption[Kompressionsfaktor als Funktion der PCA-Dimension]{Kompressionsfaktor gegenüber Float32 bei $d = 1024$ als Funktion der PCA-Dimension. Kleinere Dimensionen und niedrigere Bittiefen wirken multiplikativ; 1-Bit liegt durchgehend oben, Float32 bildet die Baseline.}
   \label{fig:phase5_compression_by_dim}
 \end{figure}
 %
@@ -687,7 +692,7 @@ Tabelle~\ref{tab:phase5_runtime} zeigt die Medianlaufzeiten und den Durchsatz f�
 %
 \begin{table}[htbp]
   \centering
-  \caption{Laufzeit im NumPy-Pfad bei $d = 1024$ und $N = 1\,000$, gemittelt über drei Datensätze. Pairwise bezieht sich auf 10\,000 Paare, Top-$k$ auf die vollständige Nachbarschaftssuche über den Korpusausschnitt.}
+  \caption[Laufzeit im NumPy-Pfad bei voller Dimensionszahl]{Laufzeit im NumPy-Pfad bei $d = 1024$ und $N = 1\,000$, gemittelt über drei Datensätze. Pairwise bezieht sich auf 10\,000 Paare, Top-$k$ auf die vollständige Nachbarschaftssuche über den Korpusausschnitt.}
   \label{tab:phase5_runtime}
   \begin{tabular}{lcccc}
     \toprule
@@ -708,15 +713,15 @@ Tabelle~\ref{tab:phase5_runtime} zeigt die Medianlaufzeiten und den Durchsatz f�
 %
 \begin{figure}[htbp]
   \centering
-  \includegraphics[width=\textwidth]{runtime_pairs_by_dim.pdf}
-  \caption{Laufzeit der paarweisen Distanzberechnung (10\,000 Paare) als Funktion der Dimension. Ab mittleren Dimensionen ist 1-Bit klar am schnellsten und zieht mit wachsender Dimension weiter davon, während die Multi-Bit-Verfahren durch Entpacken und Dequantisierung langsamer sind als Float32. Bei sehr kleinen Dimensionen liegen 1-Bit und Float32 nahezu gleichauf.}
+  \includegraphics[width=0.85\textwidth]{runtime_pairs_by_dim.pdf}
+  \caption[Laufzeit der paarweisen Distanzberechnung]{Laufzeit der paarweisen Distanzberechnung (10\,000 Paare) als Funktion der Dimension. Ab mittleren Dimensionen ist 1-Bit klar am schnellsten und zieht mit wachsender Dimension weiter davon, während die Multi-Bit-Verfahren durch Entpacken und Dequantisierung langsamer sind als Float32. Bei sehr kleinen Dimensionen liegen 1-Bit und Float32 nahezu gleichauf.}
   \label{fig:phase5_runtime_pairs}
 \end{figure}
 %
 \begin{figure}[htbp]
   \centering
-  \includegraphics[width=\textwidth]{runtime_knn_by_dim.pdf}
-  \caption{Laufzeit der Brute-Force-Top-$k$-Suche als Funktion der Dimension. In diesem NumPy-Pfad ist Float32 durchgehend am schnellsten, da dichte Matrixmultiplikation optimal auf BLAS abgebildet wird.}
+  \includegraphics[width=0.85\textwidth]{runtime_knn_by_dim.pdf}
+  \caption[Laufzeit der Brute-Force-Top-$k$-Suche]{Laufzeit der Brute-Force-Top-$k$-Suche als Funktion der Dimension. In diesem NumPy-Pfad ist Float32 durchgehend am schnellsten, da dichte Matrixmultiplikation optimal auf BLAS abgebildet wird.}
   \label{fig:phase5_runtime_knn}
 \end{figure}
 %
@@ -751,7 +756,7 @@ Die \emph{Quality Elasticity of Storage} (QES) gibt den Qualitätsverlust pro Ei
 \begin{figure}[htbp]
   \centering
   \includegraphics[width=\textwidth]{tradeoff_cq1_by_dim.pdf}
-  \caption{Compression-Quality-Score $CQ_1$ als Funktion der PCA-Dimension. Das Maximum liegt nicht bei voller Dimensionszahl, sondern bei mittleren Dimensionen, da dort Qualität und Speicherersparnis gemeinsam hoch sind.}
+  \caption[Compression-Quality-Score $CQ_1$ als Funktion der PCA-Dimension]{Compression-Quality-Score $CQ_1$ als Funktion der PCA-Dimension. Das Maximum liegt nicht bei voller Dimensionszahl, sondern bei mittleren Dimensionen, da dort Qualität und Speicherersparnis gemeinsam hoch sind.}
   \label{fig:phase5_tradeoff_cq1}
 \end{figure}
 %
@@ -800,7 +805,7 @@ Anders als die über drei Datensätze gemittelten Werte der Phase~4 (Float32-NDC
 \begin{table}[htbp]
   \centering
   \small
-  \caption{Praktische TurboQuant-Szenarien in Phase~6. Die Speicherwerte beschreiben den reinen Vektorspeicher ohne Metadaten, Textchunks oder ANN-Zusatzstrukturen.}
+  \caption[Praktische TurboQuant-Szenarien in Phase~6]{Praktische TurboQuant-Szenarien in Phase~6. Die Speicherwerte beschreiben den reinen Vektorspeicher ohne Metadaten, Textchunks oder ANN-Zusatzstrukturen.}
   \label{tab:phase6_scenarios}
   \begin{tabular}{llccccc}
     \toprule
@@ -828,14 +833,14 @@ Mit 96~Byte pro Vektor erreicht sie einen Kompressionsfaktor von 42{,}7 gegenüb
 \begin{figure}[htbp]
   \centering
   \includegraphics[width=\textwidth]{phase6_scenario_memory_comparison.pdf}
-  \caption{Speicherbedarf der Phase-6-Szenarien bei 10~Millionen Vektoren. Die Abbildung zeigt, dass alle TurboQuant-Arbeitspunkte den Float32-Index um eine Größenordnung oder mehr reduzieren.}
+  \caption[Speicherbedarf der Phase-6-Szenarien bei 10~Millionen Vektoren]{Speicherbedarf der Phase-6-Szenarien bei 10~Millionen Vektoren. Die Abbildung zeigt, dass alle TurboQuant-Arbeitspunkte den Float32-Index um eine Größenordnung oder mehr reduzieren.}
   \label{fig:phase6_memory_comparison}
 \end{figure}
 %
 \begin{figure}[htbp]
   \centering
   \includegraphics[width=\textwidth]{phase6_tradeoff_scenarios_highlighted.pdf}
-  \caption{Qualitäts-Speicher-Trade-off der TurboQuant-Konfigurationen mit den drei Anwendungsszenarien. Die markierten Punkte zeigen, dass die praktische Auswahl nicht entlang einer einzelnen optimalen Konfiguration erfolgt, sondern vom Anwendungskontext abhängt.}
+  \caption[Qualitäts-Speicher-Trade-off mit Anwendungsszenarien]{Qualitäts-Speicher-Trade-off der TurboQuant-Konfigurationen mit den drei Anwendungsszenarien. Die markierten Punkte zeigen, dass die praktische Auswahl nicht entlang einer einzelnen optimalen Konfiguration erfolgt, sondern vom Anwendungskontext abhängt.}
   \label{fig:phase6_tradeoff_scenarios}
 \end{figure}
 %
@@ -847,7 +852,7 @@ Tabelle~\ref{tab:phase6_mobile_dims} zeigt den Einfluss der Dimensionszahl für 
 %
 \begin{table}[htbp]
   \centering
-  \caption{Dimensionsvergleich für \texttt{tq\_1bit} im mobilen Szenario. Die Qualität bezieht sich auf NDCG@10 relativ zur Float32-1024d-Referenz.}
+  \caption[Dimensionsvergleich für \texttt{tq\_1bit} im mobilen Szenario]{Dimensionsvergleich für \texttt{tq\_1bit} im mobilen Szenario. Die Qualität bezieht sich auf NDCG@10 relativ zur Float32-1024d-Referenz.}
   \label{tab:phase6_mobile_dims}
   \begin{tabular}{ccccc}
     \toprule
@@ -878,7 +883,7 @@ Die Balkenhöhen wachsen linear mit der Vektoranzahl und mit der Dimension; die 
 \begin{figure}[htbp]
   \centering
   \includegraphics[width=\textwidth,height=0.68\textheight,keepaspectratio]{phase6_mobile_sub10m_scaling.pdf}
-  \caption{Mobile Speicherskalierung für TurboQuant unterhalb von 10~Millionen Vektoren. Jede Teilgrafik entspricht einer Bittiefe; innerhalb einer Vektoranzahl stehen die Balken für die evaluierten Dimensionszahlen.}
+  \caption[Mobile Speicherskalierung unterhalb von 10~Millionen Vektoren]{Mobile Speicherskalierung für TurboQuant unterhalb von 10~Millionen Vektoren. Jede Teilgrafik entspricht einer Bittiefe; innerhalb einer Vektoranzahl stehen die Balken für die evaluierten Dimensionszahlen.}
   \label{fig:phase6_mobile_tq_scaling}
 \end{figure}
 %
@@ -894,7 +899,7 @@ Tabelle~\ref{tab:phase6_aws} zeigt die modellierte Kostenwirkung für einen 10-M
 %
 \begin{table}[htbp]
   \centering
-  \caption{Grobe AWS-Kostenrechnung für einen 10-Millionen-Vektorindex. Grundlage sind EC2-On-Demand-Listenpreise (Linux) aus der AWS Price List Bulk API für die Region eu-central-1, abgerufen am 25.08.2026 und veröffentlicht am 24.08.2026, umgerechnet mit 730~Stunden pro Monat gemäß AWS-Pricing-Calculator-Annahme \cite{aws_ec2_price_list_eu_central_1,aws_pricing_calculator_assumptions}. Die Werte sind als On-Demand-Größenordnung zu interpretieren.}
+  \caption[AWS-Kostenrechnung für einen 10-Millionen-Vektorindex]{Grobe AWS-Kostenrechnung für einen 10-Millionen-Vektorindex. Grundlage sind EC2-On-Demand-Listenpreise (Linux) aus der AWS Price List Bulk API für die Region eu-central-1, abgerufen am 25.08.2026 und veröffentlicht am 24.08.2026, umgerechnet mit 730~Stunden pro Monat gemäß AWS-Pricing-Calculator-Annahme \cite{aws_ec2_price_list_eu_central_1,aws_pricing_calculator_assumptions}. Die Werte sind als On-Demand-Größenordnung zu interpretieren.}
   \label{tab:phase6_aws}
   \begin{tabular}{lcccc}
     \toprule
@@ -910,7 +915,7 @@ Tabelle~\ref{tab:phase6_aws} zeigt die modellierte Kostenwirkung für einen 10-M
 \begin{figure}[htbp]
   \centering
   \includegraphics[width=0.9\textwidth]{phase6_aws_cost_savings.pdf}
-  \caption{Geschätzte monatliche AWS-Kosten für einen 10-Millionen-Vektorindex. Die Kostenreduktion entsteht nicht durch schnellere Berechnung, sondern dadurch, dass der geringere Speicherbedarf sowohl eine kleinere Instanz als auch einen Wechsel von einer speicheroptimierten zu einer günstigeren Allzweck- beziehungsweise Graviton-Instanz erlaubt.}
+  \caption[Geschätzte monatliche AWS-Kosten für einen 10-Millionen-Vektorindex]{Geschätzte monatliche AWS-Kosten für einen 10-Millionen-Vektorindex. Die Kostenreduktion entsteht nicht durch schnellere Berechnung, sondern dadurch, dass der geringere Speicherbedarf sowohl eine kleinere Instanz als auch einen Wechsel von einer speicheroptimierten zu einer günstigeren Allzweck- beziehungsweise Graviton-Instanz erlaubt.}
   \label{fig:phase6_aws_costs}
 \end{figure}
 %
