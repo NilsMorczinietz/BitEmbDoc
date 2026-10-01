@@ -1,0 +1,45 @@
+name: PDF-Vorschau aufraeumen
+
+on:
+  pull_request:
+    types: [closed]
+
+jobs:
+  cleanup:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    # Gleiche Gruppe wie der Vorschau-Job, damit sich Schreibzugriffe nicht ueberschneiden.
+    concurrency:
+      group: pdf-previews
+      cancel-in-progress: false
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: ${{ github.repository }}
+      PR_NUMBER: ${{ github.event.pull_request.number }}
+      PREVIEW_BRANCH: pdf-previews
+    steps:
+      - name: Remove PDF from preview branch
+        run: |
+          git init -q previews && cd previews
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git remote add origin "https://x-access-token:${GH_TOKEN}@github.com/${REPO}.git"
+
+          if ! git fetch -q --depth 1 origin "${PREVIEW_BRANCH}"; then
+            echo "Kein Branch ${PREVIEW_BRANCH} vorhanden, nichts zu tun."
+            exit 0
+          fi
+          git checkout -q FETCH_HEAD
+
+          if [ ! -d "pr-${PR_NUMBER}" ]; then
+            echo "Keine Vorschau fuer PR #${PR_NUMBER} vorhanden, nichts zu tun."
+            exit 0
+          fi
+          rm -rf "pr-${PR_NUMBER}"
+
+          git checkout -q --orphan tmp
+          git add -A
+          git commit -q --allow-empty -m "PDF-Vorschau fuer PR #${PR_NUMBER} entfernt"
+          git push -q -f origin "tmp:${PREVIEW_BRANCH}"

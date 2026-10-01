@@ -69,6 +69,7 @@ Die qualitative Analyse (welche Raumeigenschaften Quantisierung begünstigen ode
 %
 Ausgangspunkt ist der vollständige Float-Raum.
 Für jedes Dokument im Datensatz wird ein Embedding-Vektor $\mathbf{x} \in \mathbb{R}^{1024}$ berechnet.
+Die Berechnung erfolgt über die Bibliothek Sentence-Transformers \cite{reimers_2019_sbert} mit aktivierter L2-Normalisierung (Option \texttt{normalize\_embeddings}), sodass jeder Ausgabevektor auf Einheitslänge skaliert wird; Phase~1 verifiziert diese Eigenschaft nachträglich für jeden einzelnen Vektor (vgl.\ Abschnitt~\ref{sec:methodik_phase1}).
 Die resultierende Matrix $\mathbf{X} \in \mathbb{R}^{N \times 1024}$ bildet die Ground Truth, gegen die alle komprimierten Repräsentationen evaluiert werden.
 %
 Aus diesem Float-Raum werden mehrere komprimierte Varianten \emph{nachträglich} abgeleitet.
@@ -184,15 +185,17 @@ Diese Vorhersagen werden in den späteren Phasen empirisch überprüft.
 %
 \subsection{Normverteilung}
 %
-Für alle Vektoren wird die L2-Norm $\|\mathbf{x}\|_2$ berechnet und deskriptiv zusammengefasst (Mittelwert, Standardabweichung, Variationskoeffizient, Bereich).
+Für jeden einzelnen Vektor der vollständigen Korpora (5\,183 Dokumente bei SciFact, 57\,638 bei FiQA und 171\,332 bei TREC-COVID) wird die L2-Norm $\|\mathbf{x}\|_2$ berechnet und deskriptiv zusammengefasst (Mittelwert, Standardabweichung, Variationskoeffizient, Bereich); eine Stichprobenziehung findet in dieser Phase nicht statt.
 Die Normverteilung beantwortet eine konkrete Frage, nämlich ob die Vektoren annähernd auf einer Hypersphäre liegen oder ob signifikante Normunterschiede existieren.
+Da die Embeddings bereits bei der Erzeugung L2-normiert werden (vgl.\ Abschnitt~\ref{sec:methodik_repraeraeume}), dient die Analyse der Verifikation dieser Eigenschaft und nicht einer nachträglichen Normalisierung.
 %
 Diese Analyse ist für die Binarisierung direkt relevant.
-Die Vorzeichenfunktion verwirft die Norminformation vollständig.
+Die Vorzeichenfunktion kodiert jede Komponente allein anhand ihres Vorzeichens, sodass die L2-Norm nicht in den Bitvektor eingeht (vgl.\ Abschnitt~\ref{sec:grundlagen_binaer}).
 Wenn die Normen stark variieren, geht bei der Binarisierung Information verloren, die nicht im Vorzeichen kodiert ist.
 Wenn die Normen hingegen nahezu konstant sind, ist der Informationsgehalt der Norm gering und ihr Verlust unproblematisch.
 %
 \subsection{Dimensionsstatistiken}
+\label{sec:methodik_dimstats}
 %
 Für jede der 1024 Dimensionen werden vier Kennzahlen berechnet:
 \begin{itemize}
@@ -204,7 +207,9 @@ Hohe Kurtosis deutet auf Ausreißer hin, die bei Quantisierung auf wenige Stufen
 \end{itemize}
 %
 Diese Kennzahlen sind nicht Selbstzweck, sondern liefern spezifische Vorhersagen.
-Als Schwellwerte für problematische Dimensionen werden $|\text{skew}| > 1{,}0$ und $\text{kurtosis} > 3{,}0$ (Fisher-Kurtosis, bei der die Normalverteilung den Wert~0 annimmt) festgelegt.
+Schiefe und Kurtosis werden als standardisierte dritte und vierte Momente berechnet, wobei die Kurtosis als Exzess-Kurtosis nach Fisher angegeben wird, sodass die Normalverteilung in beiden Kennzahlen den Wert~0 annimmt \cite{joanes_1998_skewkurt}.
+Als Schwellwerte für problematische Dimensionen werden $|\text{skew}| > 1{,}0$ und $\text{kurtosis} > 3{,}0$ festgelegt.
+Der Schiefe-Schwellwert folgt der verbreiteten Faustregel, nach der Verteilungen mit $|\text{skew}| > 1$ als stark schief gelten \cite{bulmer_1979_statistics}; der Kurtosis-Schwellwert markiert Verteilungen, deren Ränder deutlich schwerer sind als die der Normalverteilung, da die Kurtosis vor allem das Gewicht der Verteilungsränder misst \cite{westfall_2014_kurtosis}.
 Dimensionen mit hoher Schiefe sollten bei der Binarisierung mehr Fehler verursachen als symmetrische Dimensionen.
 Dimensionen mit hoher Kurtosis sollten bei TurboQuant (2~Bit, also 4 Stufen) mehr Quantisierungsfehler zeigen.
 Ob diese Vorhersagen zutreffen, wird in Phase~2 überprüft.
@@ -399,7 +404,7 @@ Die Evaluation wird für die PCA-Dimensionen $d \in \{64, 128, 256, 384, 512, 76
 %
 Die Suche erfolgt exakt (Brute-Force), nicht approximativ.
 Der Grund ist, dass approximative Verfahren (z.\,B.
-HNSW) eigene Fehler einführen, die den Quantisierungseffekt überlagern würden.
+HNSW \cite{malkov_2020_hnsw}) eigene Fehler einführen, die den Quantisierungseffekt überlagern würden.
 Das Experiment soll ausschließlich den Effekt der Kompression isolieren, nicht den einer approximativen Suche.
 Die Konsequenz dieser Entscheidung ist, dass die gemessene Retrieval-Qualität methodisch sauber vergleichbar ist, die Laufzeiten jedoch nicht direkt auf Produktivsysteme übertragbar sind.
 In produktiven Systemen mit größeren Korpora wären approximative Indizes (z.\,B.
@@ -421,7 +426,7 @@ Recall@100 ist besonders relevant für zweistufige Systeme, in denen die erste S
 Retrieval-Metriken variieren stark zwischen Queries.
 Ein Unterschied in der mittleren NDCG@10 zwischen zwei Verfahren ist nur dann aussagekräftig, wenn er nicht durch zufällige Query-Schwankungen erklärbar ist.
 %
-Für jeden paarweisen Vergleich wird daher ein Wilcoxon-Signed-Rank-Test auf den per-Query-Metriken durchgeführt.
+Für jeden paarweisen Vergleich wird daher ein Wilcoxon-Signed-Rank-Test \cite{wilcoxon_1945_ranking} auf den per-Query-Metriken durchgeführt; dieser Test ist für die Evaluation von Retrieval-Systemen etabliert \cite{smucker_2007_significance}.
 Die Wahl fällt auf Wilcoxon statt eines gepaarten t-Tests, weil Retrieval-Metriken typischerweise nicht normalverteilt sind und Wilcoxon keine Verteilungsannahme erfordert.
 %
 Das Signifikanzniveau wird auf $\alpha = 0{,}05$ festgelegt.

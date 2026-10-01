@@ -4,21 +4,21 @@
 %
 Embedding"=basierte Suchsysteme bilden einen zentralen Baustein moderner KI"=Anwendungen.
 Sie überführen Texte, Dokumente oder andere Datenobjekte in hochdimensionale Vektorrepräsentationen, deren geometrische Nähe semantische Ähnlichkeit abbildet.
-Diese Technik kommt unter anderem bei der semantischen Suche, bei Retrieval-Augmented Generation und bei Ähnlichkeitsanalysen zum Einsatz.
+Diese Technik kommt unter anderem bei der semantischen Suche \cite{reimers_2019_sbert,karpukhin_2020_dpr}, bei Retrieval-Augmented Generation \cite{lewis_2020_rag} und bei Ähnlichkeitsanalysen zum Einsatz.
 \par
 Der Speicherbedarf solcher Systeme skaliert linear mit der Korpusgröße und der Vektordimension.
 Ein Korpus von einer Million Dokumenten mit 1024-dimensionalen Float32-Vektoren belegt bereits rund 4~GB Arbeitsspeicher allein für die Vektordaten.
 In Szenarien mit zehn oder hundert Millionen Dokumenten übersteigt der Ressourcenbedarf schnell die Kapazitäten typischer Produktivsysteme.
-Hinzu kommt, dass jede Suchanfrage im Brute-Force-Fall eine vollständige Distanzberechnung gegen alle gespeicherten Vektoren erfordert, was die Antwortlatenz linear mit der Korpusgröße ansteigen lässt.
+Hinzu kommt, dass jede Suchanfrage im Brute-Force-Fall eine vollständige Distanzberechnung gegen alle gespeicherten Vektoren erfordert, was die Antwortlatenz linear mit der Korpusgröße ansteigen lässt \cite{johnson_2021_faiss}.
 \par
 Besonders deutlich wird dieses Spannungsfeld im Kontext agentenbasierter KI-Systeme.
-Solche Systeme ermöglichen es Sprachmodellen, zur Laufzeit auf externe Werkzeuge zuzugreifen und dabei Retrieval-Operationen auszuführen.
+Solche Systeme ermöglichen es Sprachmodellen, zur Laufzeit auf externe Werkzeuge zuzugreifen und dabei Retrieval-Operationen auszuführen \cite{schick_2023_toolformer,yao_2023_react}.
 Die Echtzeit-Anforderungen solcher Architekturen verschärfen den Bedarf an kompakten, schnell durchsuchbaren Repräsentationen.
 Dies ist jedoch nur ein Beispiel für ein breiteres Praxisfeld, das von lokaler Suche auf Endgeräten bis zu kostenoptimierten Retrieval-Diensten in der Cloud reicht und in dem Speicher- und Kostenbudgets die einsetzbare Repräsentation maßgeblich bestimmen.
 %
 \section{Quantisierung als Lösungsansatz}
 %
-Quantisierung adressiert dieses Problem, indem sie die Genauigkeit der Vektordarstellung gezielt reduziert.
+Quantisierung adressiert dieses Problem, indem sie die Genauigkeit der Vektordarstellung gezielt reduziert \cite{gray_1998_quantization}.
 Anstelle von 32~Bit pro Dimension werden nur noch 4, 2 oder im Extremfall 1~Bit verwendet.
 Der theoretische Speichervorteil ist erheblich: Eine Reduktion von Float32 auf 1~Bit entspricht einem Kompressionsfaktor von~32 bei gleicher Dimensionszahl; kombiniert mit einer Dimensionsreduktion sind Faktoren von über 300 erreichbar.
 \par
@@ -28,7 +28,14 @@ Die entscheidende Frage ist daher nicht, \emph{ob} Information verloren geht, so
 %
 \section{Stand der Forschung}
 %
-Aktuelle Arbeiten zeigen, dass quantisierte Embeddings nicht nur theoretisch interessant, sondern auch praktisch einsetzbar sind.
+Die Kompression von Vektorrepräsentationen für die Ähnlichkeitssuche ist seit Jahrzehnten Gegenstand der Forschung.
+Die informationstheoretische Grundlage bildet die Rate-Distortion-Theorie \cite{shannon_1959_ratedistortion}; eine umfassende Übersicht über skalare und Vektorquantisierung geben Gray und Neuhoff \cite{gray_1998_quantization}.
+Eine erste Verfahrenslinie bilden Hashing-Ansätze, die Vektoren auf kurze Binärcodes abbilden: Charikar zeigt, dass die Vorzeichen zufälliger Projektionen den Winkel zwischen zwei Vektoren unverzerrt schätzen \cite{charikar_2002_simhash}, und Iterative Quantization lernt eine Rotation, die den Fehler der anschließenden Binarisierung minimiert \cite{gong_2013_itq}.
+Eine zweite Linie bildet die Product Quantization \cite{jegou_2011_pq} mit ihrer Erweiterung Optimized Product Quantization \cite{ge_2014_opq}; sie zerlegt Vektoren in Teilräume und kodiert jeden Teilraum über ein trainiertes Codebuch.
+Aktuelle Suchbibliotheken wie ScaNN \cite{guo_2020_scann} und Faiss \cite{johnson_2021_faiss,douze_2024_faiss} kombinieren solche Kompressionsverfahren mit approximativen Indexstrukturen, etwa dem graphbasierten HNSW \cite{malkov_2020_hnsw}; ANN-Benchmarks \cite{aumueller_2020_annbench} und Übersichtsarbeiten zu Vektordatenbanken \cite{pan_2024_vdbms} dokumentieren den Stand dieser Systeme.
+\par
+Mit der Verbreitung dichter Retrieval-Modelle \cite{reimers_2019_sbert,karpukhin_2020_dpr} hat die Kompression von Text-Embeddings zusätzliche praktische Bedeutung erlangt.
+Yamada et al.\ zeigen, dass binäre Passage-Repräsentationen in Kombination mit einem nachgeschalteten Reranking nahezu die Qualität des unkomprimierten Retrievals erreichen \cite{yamada_2021_bpr}, und aktuelle Praxisberichte belegen, dass nachträgliche Binär- und Int8-Quantisierung moderner Embedding-Modelle einen Großteil der Retrieval-Qualität bei drastisch reduziertem Speicherbedarf erhält \cite{shakir_2024_embedding_quantization}.
 Zandieh et al.\ beschreiben mit TurboQuant eine Methode, die Vektoren mittels orthogonaler Rotation und uniformer skalarer Quantisierung auf wenige Bits pro Dimension komprimiert und dabei sowohl Distortion als auch Retrieval-Qualität günstig beeinflusst \cite{zandieh_2025_turboquant}.
 Das Open-Source-Projekt turbovec setzt diesen Ansatz als Vektorindex mit Python-Anbindung um \cite{turbovec_2024}.
 \par
