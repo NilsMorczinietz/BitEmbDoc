@@ -10,6 +10,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Bei PRs den letzten Commit des PR-Branches bauen (nicht den Merge-Commit),
+          # damit die Vorschau genau dem Stand des Commits entspricht.
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Compile LaTeX
         uses: xu-cheng/latex-action@v4
@@ -23,6 +27,89 @@ jobs:
           name: pdf
           path: BitEmbeddings.pdf
           retention-days: 14
+
+  # Legt die PDF einer PR auf dem Branch "pdf-previews" ab und verlinkt sie
+  # per Kommentar in der PR. GitHub zeigt PDFs in der Dateiansicht direkt an.
+  pr-preview:
+    needs: build
+    # Nur fuer PRs aus diesem Repository, bei Forks fehlen die Schreibrechte.
+    if: >-
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    # Alle PRs schreiben auf denselben Branch, daher nacheinander ausfuehren.
+    concurrency:
+      group: pdf-previews
+      cancel-in-progress: false
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: ${{ github.repository }}
+      PR_NUMBER: ${{ github.event.pull_request.number }}
+      HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+      PREVIEW_BRANCH: pdf-previews
+    steps:
+      - name: Download PDF
+        uses: actions/download-artifact@v4
+        with:
+          name: pdf
+          path: artifact
+
+      - name: Publish PDF to preview branch
+        run: |
+          SHORT_SHA="${HEAD_SHA:0:7}"
+          PDF_PATH="pr-${PR_NUMBER}/BitEmbeddings-${SHORT_SHA}.pdf"
+          echo "PDF_PATH=${PDF_PATH}" >> "$GITHUB_ENV"
+
+          git init -q previews && cd previews
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git remote add origin "https://x-access-token:${GH_TOKEN}@github.com/${REPO}.git"
+
+          # Bestehende Vorschauen anderer PRs uebernehmen, falls der Branch schon existiert.
+          if git fetch -q --depth 1 origin "${PREVIEW_BRANCH}"; then
+            git checkout -q FETCH_HEAD
+          fi
+
+          # Pro PR nur die PDF des neuesten Commits behalten.
+          rm -rf "pr-${PR_NUMBER}"
+          mkdir -p "pr-${PR_NUMBER}"
+          cp ../artifact/BitEmbeddings.pdf "${PDF_PATH}"
+
+          # Branch als einzelnen Commit neu schreiben, damit das Repo nicht
+          # mit jeder Vorschau um eine weitere PDF-Version waechst.
+          git checkout -q --orphan tmp
+          git add -A
+          git commit -q -m "PDF-Vorschau fuer PR #${PR_NUMBER} (${SHORT_SHA})"
+          git push -q -f origin "tmp:${PREVIEW_BRANCH}"
+
+      - name: Comment on PR
+        run: |
+          MARKER="<!-- pdf-preview -->"
+          VIEW_URL="https://github.com/${REPO}/blob/${PREVIEW_BRANCH}/${PDF_PATH}"
+          RAW_URL="https://github.com/${REPO}/raw/${PREVIEW_BRANCH}/${PDF_PATH}"
+          RUN_URL="https://github.com/${REPO}/actions/runs/${GITHUB_RUN_ID}"
+
+          BODY="${MARKER}
+          ### 📄 PDF-Vorschau
+
+          Stand: Commit ${HEAD_SHA}
+
+          **[PDF im Browser ansehen](${VIEW_URL})** · [Herunterladen](${RAW_URL}) · [Build-Log](${RUN_URL})
+
+          <sub>Wird bei jedem Push auf diese PR automatisch aktualisiert und nach dem Schliessen der PR entfernt.</sub>"
+
+          COMMENT_ID="$(gh api --paginate "repos/${REPO}/issues/${PR_NUMBER}/comments" \
+            --jq ".[] | select(.user.login == \"github-actions[bot]\" and (.body | contains(\"${MARKER}\"))) | .id" \
+            | head -n 1)"
+
+          if [ -n "${COMMENT_ID}" ]; then
+            gh api -X PATCH "repos/${REPO}/issues/comments/${COMMENT_ID}" -f body="${BODY}" > /dev/null
+          else
+            gh api -X POST "repos/${REPO}/issues/${PR_NUMBER}/comments" -f body="${BODY}" > /dev/null
+          fi
 
   release:
     needs: build

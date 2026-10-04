@@ -48,7 +48,7 @@ Das erzeugt `build/BitEmbeddings.pdf`. Der Unterordner `build/content/` wird fü
 
 1. Neuen Branch vom `main` erstellen (z.B. `feature/kapitel-einleitung`)
 2. Änderungen committen und pushen
-3. Pull Request erstellen → Build wird automatisch geprüft
+3. Pull Request erstellen → Build wird automatisch geprüft und eine PDF-Vorschau in der PR verlinkt
 4. Nach Review wird der PR in `main` gemergt → Release wird aktualisiert
 
 ### Regeln
@@ -61,6 +61,14 @@ Das erzeugt `build/BitEmbeddings.pdf`. Der Unterordner `build/content/` wird fü
 ### PDF herunterladen
 
 Die aktuelle Version ist immer als [GitHub Release](../../releases/latest) verfügbar.
+
+### PDF-Vorschau in Pull Requests
+
+Bei jedem Push auf einen PR-Branch wird die PDF zum Stand des letzten Commits gebaut.
+Sie wird auf dem Branch `pdf-previews` unter `pr-<Nummer>/` abgelegt und per Kommentar in der PR verlinkt.
+Der Link öffnet die PDF direkt in der GitHub-Dateiansicht, ein Download ist nicht nötig.
+Der Kommentar wird bei jedem weiteren Push aktualisiert, nach dem Schließen der PR wird die Vorschau automatisch entfernt.
+Für PRs aus Forks gibt es keine Vorschau, dort steht die PDF nur als Artifact im Actions-Run bereit.
 
 ## Video-Anleitung
 
